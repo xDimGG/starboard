@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<% include partials/head %>
+<body>
+  <% include partials/nav %>
+  <div id="app">
+    <h2 @click="get">New</h2>
+    <div class="center">
+      <div v-for="msg in messages" class="message animated" :href="`/${msg.server_id}/${msg.message_id}`">
+        <img :src="`${msg.author_icon}?size=32`">
+        <h1>{{ msg.author_tag }}</h1><span>{{ ` (${msg.author_id}) in #${msg.channel_name}` }}</span>
+        <a :href="`/${msg.server_id}/${msg.message_id}`" class="link">Permalink</a>
+        <h2 v-html="msg.message_content"></h2>
+        <a :href="msg.message_file" target="_blank" v-if="msg.message_file">
+          <img :src="msg.message_file" alt="Image">
+        </a>
+        <span>{{ msg.star }}{{ msg.message_stars }} star{{ msg.message_stars === 1 ? '' : 's' }} | {{ msg.message_created }}</span>
+      </div>
+    </div>
+  </div>
+	<script src="/socket.io/socket.io.js"></script>
+  <script src="/static/vue.js"></script>
+  <script>
+		const socket = io();
+    const app = new Vue({
+      el: '#app',
+      data: {
+        messages: [<%- JSON.stringify(msg) %>]
+      },
+      methods: {
+        get: async function() {
+					socket.emit('request', '<%= msg.server_id %>');
+        }
+      }
+    });
+		socket.on('response', data => {
+			app.messages.push(data);
+			if (app.messages.length > 100) app.messages.shift();
+			const div = document.querySelector('.center');
+			let i = setInterval(() => div.scrollTop = div.scrollHeight, 10);
+			setTimeout(() => {
+				clearInterval(i);
+				i = null
+			}, 500);
+		});
+		document.onkeypress = e => {
+			if (e.key === 'n') app.get();
+		};
+		const add = id => {
+			socket.on(id.slice(0, -1), count => {
+				const el = document.getElementById(id);
+				el.innerText = count;
+				el.classList.remove('pop');
+				el.classList.add('pop');
+			});
+		};
+		add('guilds');
+		add('users');
+		add('messages');
+		add('stars');
+  </script>
+</body>
+</html>
