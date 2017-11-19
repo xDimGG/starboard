@@ -8,14 +8,14 @@ exports.run = async (msg, { client, starboard, settings }) => {
 	const args = msg.content.slice(match ? client.user.id.length + (msg.content.startsWith('<@!') ? 4 : 3) : prefix.length).trim().split(/ +/);
 	const cmd = args.shift().toLowerCase();
 	try {
-    const run = cmd => require(`../commands/${cmd}`).run(msg, args, { client, prefix, starboard, settings });
-    if (cmd === 'eval') await run('eval');
-    if (cmd === 'help') await run('help');
-    if (cmd === 'pins') await run('pins');
+		const run = cmd => require(`../commands/${cmd}`).run(msg, args, { client, prefix, starboard, settings });
+		if (cmd === 'eval') await run('eval');
+		if (cmd === 'help') await run('help');
+		if (cmd === 'pins') await run('pins');
 		if (cmd === 'invite') await run('invite');
-    if (cmd === 'setup') await run('setup');
+		if (cmd === 'setup') await run('setup');
 		if (cmd === 'prefix') await run('prefix');
-    if (cmd === 'minimal') await run('minimal');
+		if (cmd === 'minimal') await run('minimal');
 		if (cmd === 'announce') await run('announce');
 		if (['blacklists', 'blacklisted'].includes(cmd)) await run('blacklists');
 		if (['wl', 'whitelist'].includes(cmd)) await run('whitelist');

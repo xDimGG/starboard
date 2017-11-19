@@ -38,7 +38,7 @@ exports.run = async (raw, { client, settings, starboard }) => {
 		return;
 	}
 	if (['MESSAGE_UPDATE', 'MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE'].includes(raw.t)) {
-    const msg = await channel.messages.fetch(raw.d.id || raw.d.message_id);
+		const msg = await channel.messages.fetch(raw.d.id || raw.d.message_id);
 		if (!msg || msg.author.id === client.user.id) return;
 		if (msg.author.id === raw.d.user_id) {
 			if (raw.t === 'MESSAGE_REACTION_ADD') return msg.reply('you can\'t star your own messages.');
@@ -53,8 +53,8 @@ exports.run = async (raw, { client, settings, starboard }) => {
 			const embed = new MessageEmbed()
 				.setAuthor(`${msg.author.tag}${minimal ? '' : ` (${msg.author.id})`} in #${msg.channel.name}`, `${msg.author.displayAvatarURL({ format: 'png' })}?size=20`, `${site}/${msg.guild.id}/${msg.id}`)
 				.setColor(color)
-        .setFooter(`${emoji} ${count} Star${count === 1 ? '' : 's'}`);
-      if (!minimal) embed.setTimestamp(msg.createdAt);
+				.setFooter(`${emoji} ${count} Star${count === 1 ? '' : 's'}`);
+			if (!minimal) embed.setTimestamp(msg.createdAt);
 			if (msg.content) embed.setDescription(msg.content);
 			if (prev) {
 				const prevMsg = await sb.messages.fetch(prev.message_sent);
@@ -62,7 +62,7 @@ exports.run = async (raw, { client, settings, starboard }) => {
 				starboard.update(msg, count);
 				client.emit('starCount');
 			} else {
-        console.log(`New starred message in ${msg.guild.name} (${msg.guild.id})`);
+				console.log(`New starred message in ${msg.guild.name} (${msg.guild.id})`);
 				if (msg.attachments.size) {
 					const file = msg.attachments.first().file;
 					if (formats.some(format => file.name.toLowerCase().endsWith(`.${format}`))) embed.setImage(file.attachment);
