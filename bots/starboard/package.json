@@ -1,0 +1,13 @@
+{
+  "author": "Dim",
+  "description": "Discord.JS Starboard Bot",
+  "main": "index.js",
+  "name": "starboard",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "express": "*",
+    "express-handlebars": "*",
+    "socket.io": "*"
+  }
+}

@@ -1,19 +1,11 @@
 {
-  "author": "Dim",
-  "description": "Discord.JS Starboard Bot",
-  "main": "bot.js",
-  "name": "starboard",
-  "version": "1.0.0",
-  "private": true,
-  "license": "MIT",
-  "dependencies": {
-    "discord.js": "github:hydrabolt/discord.js",
-    "ejs": "^2.5.7",
-    "express": "^4.15.4",
-    "image-extractor": "github:lloti/node-image-extractor",
-    "moment": "^2.19.1",
-    "socket.io": "^2.0.4",
-    "sqlite": "^2.8.0",
-    "url-regex": "^4.1.1"
-  }
+	"name": "discord",
+	"version": "1.0.0",
+	"description": "Discord",
+	"private": true,
+	"dependencies": {
+		"discord.js": "github:hydrabolt/discord.js",
+		"sequelize": "github:sequelize/sequelize",
+		"sqlite3": "*"
+	}
 }
