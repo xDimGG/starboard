@@ -18,9 +18,9 @@ exports.run = async (data, client) => {
 	const blacklisted = await client.blacklists.has([message.author.id, channel.id], channel.guild.id);
 	if (blacklisted) return;
 
-	const selfstar = client.settings.get(channel.guild.id, 'selfstar', false);
+	const selfStar = client.settings.get(channel.guild.id, 'selfstar', false);
 
-	if (message.author.id === data.user_id && !selfstar) {
+	if (message.author.id === data.user_id && !selfStar) {
 		if (!warned[message.id] && channel.permissionsFor(client.user).has('SEND_MESSAGES'))
 			message.reply('you can\'t star your own messages!');
 

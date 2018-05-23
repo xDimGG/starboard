@@ -13,7 +13,7 @@ class SelfStar extends Command {
 		if (!msg.member.hasPermission('ADMINISTRATOR') && !msg.owner) return msg.channel.send(`Self-star warnings are currently ${selfStar ? 'enabled' : 'disabled'}.`);
 		await this.client.settings.set(msg.guild.id, 'selfstar', !selfStar);
 
-		return msg.channel.send(`Self-star warnings now ${selfStar ? 'enabled' : 'disabled'}.`);
+		return msg.channel.send(`Self-star warnings are now ${selfStar ? 'enabled' : 'disabled'}.`);
 	}
 }
 
