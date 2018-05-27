@@ -20,10 +20,9 @@ exports.run = async (data, client) => {
 
 	const removeBotReacts = client.settings.get(channel.guild.id, 'removebotreacts', true);
 
-	const reactor = await client.users.get(data.user_id);
-	if (reactor.bot)
-		if (removeBotReacts)
-			return message.reactions.get(emoji).users.remove(data.user_id);
+	const reactor = client.users.get(data.user_id);
+	if (reactor.bot && removeBotReacts)
+		return message.reactions.get(emoji).users.remove(data.user_id);
 
 	const selfStar = client.settings.get(channel.guild.id, 'selfstar', false);
 
