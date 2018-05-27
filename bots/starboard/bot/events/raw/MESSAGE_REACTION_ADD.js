@@ -18,7 +18,16 @@ exports.run = async (data, client) => {
 	const blacklisted = await client.blacklists.has([message.author.id, channel.id], channel.guild.id);
 	if (blacklisted) return;
 
-	if (message.author.id === data.user_id) {
+	const removeBotReacts = client.settings.get(channel.guild.id, 'removebotreacts', true);
+
+	const reactor = await client.users.get(data.user_id);
+	if (reactor.bot)
+		if (removeBotReacts)
+			return message.reactions.get(emoji).users.remove(data.user_id);
+
+	const selfStar = client.settings.get(channel.guild.id, 'selfstar', false);
+
+	if (message.author.id === data.user_id && !selfStar) {
 		if (!warned[message.id] && channel.permissionsFor(client.user).has('SEND_MESSAGES'))
 			message.reply('you can\'t star your own messages!');
 
