@@ -1,6 +1,6 @@
 const { Command } = require('../../../../../');
 
-class SelfStar extends Command {
+class SelfStarCommand extends Command {
 	constructor() {
 		super({
 			description: 'Toggles the self-star warning.',
