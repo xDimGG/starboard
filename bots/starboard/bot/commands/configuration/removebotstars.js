@@ -1,6 +1,6 @@
 const { Command } = require('../../../../../');
 
-class RemoveBotStars extends Command {
+class RemoveBotStarsCommand extends Command {
 	constructor() {
 		super({
 			description: 'Toggles whether or not bot stars are removed.',
