@@ -17,4 +17,4 @@ class SelfStarCommand extends Command {
 	}
 }
 
-module.exports = SelfStar;
+module.exports = SelfStarCommand;

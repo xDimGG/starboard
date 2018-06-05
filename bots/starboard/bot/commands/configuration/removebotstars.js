@@ -10,13 +10,11 @@ class RemoveBotStarsCommand extends Command {
 
 	async run(msg) {
 		const remove = this.client.settings.get(msg.guild.id, 'removebotreacts', true);
-		if (!msg.member.hasPermission('ADMINISTRATOR') && 
-!msg.owner) return msg.channel.send(`Bot stars are ${remove ? '' : 
-'not'} removed.`);
+		if (!msg.member.hasPermission('ADMINISTRATOR') && !msg.owner) return msg.channel.send(`Bot stars are ${remove ? '' : 'not'} removed.`);
 		await this.client.settings.set(msg.guild.id, 'removebotreacts', !remove);
 
 		return msg.channel.send(`Bot stars are ${remove ? 'no longer' : 'now being'} removed.`);
 	}
 }
 
-module.exports = RemoveBotStars;
+module.exports = RemoveBotStarsCommand;

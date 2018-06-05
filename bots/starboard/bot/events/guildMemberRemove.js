@@ -7,7 +7,7 @@ class GuildMemberRemoveEvent extends Event {
 		if (!channel || channel.guild.id !== member.guild.id || !channel.guild.available) return;
 
 		const embed = new MessageEmbed()
-			.setAuthor(`${member.displayName} (${member.id})`, member.displayAvatarURL)
+			.setAuthor(`${member.displayName} (${member.id})`, member.displayAvatarURL())
 			.setColor(0xFF3838)
 			.setFooter('Left')
 			.setTimestamp();

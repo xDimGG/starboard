@@ -37,7 +37,7 @@ exports.run = async (data, client) => {
 	}
 
 	const minimum = client.settings.get(channel.guild.id, 'minimum', 1);
-	const reactions = message.reactions.has(emoji) ? message.reactions.get(emoji).count : 0
+	const reactions = message.reactions.has(emoji) ? message.reactions.get(emoji).count : 0;
 
 	if (reactions < minimum) return;
 
