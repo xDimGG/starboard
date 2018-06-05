@@ -9,7 +9,7 @@ class SelfStarCommand extends Command {
 	}
 
 	async run(msg) {
-		const selfStar = this.client.settings.get(msg.guild.id, 'selfstar', true);
+		const selfStar = this.client.settings.get(msg.guild.id, 'selfstar', false);
 		if (!msg.member.hasPermission('ADMINISTRATOR') && !msg.owner) return msg.channel.send(`Self-star warnings are currently ${selfStar ? 'enabled' : 'disabled'}.`);
 		await this.client.settings.set(msg.guild.id, 'selfstar', !selfStar);
 

@@ -18,7 +18,7 @@ exports.run = async (data, client) => {
 	const blacklisted = await client.blacklists.has([message.author.id, channel.id], channel.guild.id);
 	if (blacklisted) return;
 
-	const removeBotReacts = client.settings.get(channel.guild.id, 'removebotreacts', true);
+	const removeBotReacts = client.settings.get(channel.guild.id, 'removebotstars', true);
 
 	const reactor = client.users.get(data.user_id);
 	if (reactor.bot && removeBotReacts)
