@@ -55,21 +55,21 @@ func (b *Bot) messageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 
 	var err error
 
+	image := util.GetImage(m.Message)
+
+	q := b.PG.
+		Model((*tables.Message)(nil)).
+		Where("id = ?", m.ID)
+
 	if m.EditedTimestamp != "" {
-		_, err = b.PG.Model(&tables.Message{
-			ID:      m.ID,
-			Content: m.Content,
-			Image:   util.GetImage(m.Message),
-		}).WherePK().UpdateNotNull()
-	} else if image := util.GetImage(m.Message); image != "" {
-		_, err = b.PG.Model(&tables.Message{
-			ID:    m.ID,
-			Image: image,
-		}).WherePK().UpdateNotNull()
+		q = q.Set("content = ?", m.Content).Set("image = ?", image)
+	} else if image != "" {
+		q = q.Set("image = ?", image)
 	} else {
 		return
 	}
 
+	_, err = q.Update()
 	if err != nil {
 		b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_UPDATE"})
 		return
