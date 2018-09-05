@@ -1,0 +1,6 @@
+.dev.env
+.env
+.gitattributes
+.gitignore
+vendor
+README.md

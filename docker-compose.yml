@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  bot:
+    build: .
+    restart: always
+    env_file: env/prod.env
+    depends_on:
+      - postgres
+      - redis
+  redis:
+    image: redis:alpine
+    env_file: env/prod.env
+  postgres:
+    image: postgres:alpine
+    env_file: env/prod.env
