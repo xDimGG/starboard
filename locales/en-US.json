@@ -69,9 +69,9 @@
 	"commands.stats.phrase.system": "System",
 	"commands.stats.phrase.system_value": "• Uptime: %s\n• Memory: %s\n• [Go](https://golang.org): %s\n• [DiscordGo](https://github.com/bwmarrin/discordgo): %s",
 	"commands.stats.phrase.bot": "Bot",
-	"commands.stats.phrase.bot_value": "• Shards: %d\n• Servers: %d\n• Channels: %d\n• Members: %d",
+	"commands.stats.phrase.bot_value": "• Shards: %s\n• Servers: %s\n• Channels: %s\n• Members: %s",
 	"commands.stats.phrase.starboard": "Starboard",
-	"commands.stats.phrase.starboard_value": "• Stars: %d\n• Messages: %d",
+	"commands.stats.phrase.starboard_value": "• Stars: %s\n• Messages: %s",
 
 	"commands.invite.name": "invite",
 	"commands.invite.aliases": ["support", "donate"],
