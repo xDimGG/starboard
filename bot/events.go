@@ -1,8 +1,6 @@
 package bot
 
 import (
-	"time"
-
 	"github.com/go-pg/pg"
 
 	"github.com/xdimgg/starboard/bot/tables"
@@ -48,7 +46,7 @@ func (b *Bot) messageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 			return
 		}
 
-		err = b.Redis.Expire(key, time.Hour).Err()
+		err = b.Redis.Expire(key, expiryTime).Err()
 		if err != nil {
 			b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_UPDATE"})
 			return
@@ -103,7 +101,7 @@ func (b *Bot) messageDelete(s *discordgo.Session, m *discordgo.MessageDelete) {
 	}
 
 	starboard := b.getStarboard(s, msg)
-	if starboard == "" {
+	if starboard == settingNone {
 		return
 	}
 
@@ -141,7 +139,7 @@ func (b *Bot) messageDeleteBulk(s *discordgo.Session, m *discordgo.MessageDelete
 	}
 
 	starboard := b.getStarboard(s, msg)
-	if starboard == "" {
+	if starboard == settingNone {
 		return
 	}
 
@@ -253,7 +251,7 @@ func (b *Bot) messageReactionRemoveAll(s *discordgo.Session, m *discordgo.Messag
 	}
 
 	starboard := b.getStarboard(s, msg)
-	if starboard == "" {
+	if starboard == settingNone {
 		return
 	}
 

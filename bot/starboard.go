@@ -12,6 +12,7 @@ import (
 	"github.com/xdimgg/starboard/bot/tables"
 )
 
+const expiryTime = time.Minute * 20
 const gray = 0x2e3036
 
 var styles = []struct{ max, color int }{
@@ -41,6 +42,10 @@ func (b *Bot) getStarboard(s *discordgo.Session, msg *tables.Message) (starboard
 		}
 
 		starboard = ch.ID
+	}
+
+	if starboard == "" {
+		starboard = settingNone
 	}
 
 	return
@@ -125,7 +130,7 @@ func (b *Bot) cacheMessage(m *discordgo.Message) (err error) {
 		return
 	}
 
-	return b.Redis.Expire(key, time.Hour).Err()
+	return b.Redis.Expire(key, expiryTime).Err()
 }
 
 func (b *Bot) createMessage(s *discordgo.Session, id, channel, guild string) (err error) {
@@ -244,7 +249,7 @@ func (b *Bot) createMessage(s *discordgo.Session, id, channel, guild string) (er
 	}
 
 	starboard := b.getStarboard(s, msg)
-	if starboard == "" {
+	if starboard == settingNone {
 		return
 	}
 
@@ -301,7 +306,7 @@ func (b *Bot) updateMessage(s *discordgo.Session, id, channel, guild string) (er
 	}
 
 	starboard := b.getStarboard(s, msg)
-	if starboard == "" {
+	if starboard == settingNone {
 		return
 	}
 
