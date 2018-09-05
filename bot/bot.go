@@ -114,6 +114,10 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 		s.State.TrackPresences = false
 		s.State.TrackVoice = false
 
+		s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+			s.UpdateStatus(0, "@"+r.User.Username+" help | (just reset database, update your settings)")
+		})
+
 		s.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 			b.Sentry.CapturePanic(func() {
 				b.messageCreate(s, m)
