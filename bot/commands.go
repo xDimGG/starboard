@@ -217,15 +217,21 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 
 		value = arg
 	case settingLanguage:
+		if code, ok := util.LanguagesReversed[strings.ToLower(arg)]; ok {
+			arg = code
+		}
+
 		if b.Locales.Asset(arg) == nil {
 			var langs []string
 			for lang := range b.Locales.Assets {
-				langs = append(langs, "``"+lang+"``")
+				langs = append(langs, "``"+util.Languages[lang]+"``")
 			}
+
 			ctx.Say("settings.restrictions.one_of", l, strings.Join(langs, ", "))
 			return
 		}
 
+		ctx.Locale = b.Locales.Language(arg)
 		value = arg
 	case settingMinimum:
 		i, err := strconv.Atoi(arg)

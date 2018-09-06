@@ -2,9 +2,25 @@ package util
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
+
+// Languages maps ISO codes to their native names
+var Languages = map[string]string{
+	"en-US": "American English",
+	"nl-NL": "Nederlands",
+}
+
+// LanguagesReversed is Languages with its keys and values flipped
+var LanguagesReversed = make(map[string]string)
+
+func init() {
+	for k, v := range Languages {
+		LanguagesReversed[strings.ToLower(v)] = k
+	}
+}
 
 var reCustomEmoji = regexp.MustCompile(`<(a)?:(\w{2,32}):(\d{17,19})>`)
 

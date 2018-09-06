@@ -223,10 +223,14 @@ func findDefaultChannel(key string, state *discordgo.State, guild *discordgo.Gui
 }
 
 func getSettingString(key string, value interface{}) string {
-	if strings.Contains(key, "channel") && value != settingNone {
+	if strings.Contains(key, settingChannel) && value != settingNone {
 		if str, ok := value.(string); ok {
 			value = "<#" + str + ">"
 		}
+	}
+
+	if key == settingLanguage {
+		value = util.Languages[value.(string)]
 	}
 
 	return fmt.Sprintf("%v", value)
