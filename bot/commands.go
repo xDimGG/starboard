@@ -243,7 +243,7 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 		}
 
 		value = i
-	case settingSelfStar, settingMinimal, settingRemoveBotStars:
+	case settingSelfStar, settingMinimal, settingRemoveBotStars, settingSaveDeletedMessages:
 		t := ctx.S("settings.phrase.true")
 		f := ctx.S("settings.phrase.false")
 		arg = strings.ToLower(arg)
@@ -310,16 +310,6 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 		} else {
 			value = "whitelist"
 		}
-	default:
-		b.Sentry.CaptureMessage("Unhandled setting: "+key, map[string]string{"args": strings.Join(ctx.Args, " ")})
-		ctx.Say("settings.phrase.unknown")
-		return
-	}
-
-	if value == nil {
-		b.Sentry.CaptureMessage("Nil setting: "+key, map[string]string{"args": strings.Join(ctx.Args, " ")})
-		ctx.Say("settings.phrase.unknown")
-		return
 	}
 
 	err = b.Settings.Set(ctx.GuildID, key, value)
