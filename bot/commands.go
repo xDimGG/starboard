@@ -310,6 +310,10 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 		} else {
 			value = "whitelist"
 		}
+	default:
+		b.Sentry.CaptureMessage("Unhandled setting: "+key, nil)
+		ctx.Say("settings.phrase.unknown")
+		return
 	}
 
 	err = b.Settings.Set(ctx.GuildID, key, value)
