@@ -371,8 +371,8 @@ func (b *Bot) runStats(ctx *commandler.Context) (err error) {
 				Name: ctx.S("commands.stats.phrase.starboard"),
 				Value: ctx.S(
 					"commands.stats.phrase.starboard_value",
-					humanize.Comma(int64(starCount)),
 					humanize.Comma(int64(messageCount)),
+					humanize.Comma(int64(starCount)),
 				),
 			},
 		},
