@@ -168,6 +168,7 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 			c.SetOnError(func(ctx *commandler.Context, err error, panicked bool) {
 				b.Sentry.CaptureError(err, map[string]string{
 					"command":  ctx.Command.Name,
+					"args":     strings.Join(ctx.Args, " "),
 					"panicked": strconv.FormatBool(panicked),
 				})
 

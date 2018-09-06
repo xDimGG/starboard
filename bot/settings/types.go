@@ -34,7 +34,7 @@ func serialize(v interface{}) string {
 		return str + "," + e.ID + "," + e.Name + "," + e.Unicode
 
 	default:
-		panic(errors.New("Unhadled type: " + reflect.TypeOf(v).Name()))
+		panic(errors.New("Unhandled type: " + reflect.TypeOf(v).Name()))
 	}
 }
 

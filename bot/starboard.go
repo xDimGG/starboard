@@ -83,7 +83,7 @@ func (b *Bot) generateEmbed(msg *tables.Message, count int) (embed *discordgo.Me
 		}
 	} else {
 		embed.Footer = &discordgo.MessageEmbedFooter{
-			Text:    strconv.Itoa(count) + " " + emoji.Name,
+			Text:    strconv.Itoa(count),
 			IconURL: emoji.URL(),
 		}
 	}
