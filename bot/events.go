@@ -227,12 +227,14 @@ func (b *Bot) messageReactionRemove(s *discordgo.Session, m *discordgo.MessageRe
 		return
 	}
 
-	if err != pg.ErrNoRows {
-		err = b.updateMessage(s, m.MessageID, m.ChannelID, m.GuildID)
-		if err != nil {
-			b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_REACTION_REMOVE"})
+	err = b.updateMessage(s, m.MessageID, m.ChannelID, m.GuildID)
+	if err != nil {
+		if e, ok := err.(pg.Error); ok && e.IntegrityViolation() {
 			return
 		}
+
+		b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_REACTION_REMOVE"})
+		return
 	}
 }
 
