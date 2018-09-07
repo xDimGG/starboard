@@ -24,7 +24,7 @@ func main() {
 			OwnerID:   os.Getenv("BOT_OWNER_ID"),
 			Mode:      os.Getenv("MODE"),
 			SentryDSN: os.Getenv("SENTRY_DSN"),
-			BotLists: bot.BotLists{
+			Lists: bot.Lists{
 				{os.Getenv("DBL_KEY"), "https://discordbots.org/api/bots/:id/stats"},
 				{os.Getenv("PW_BOTS_KEY"), "https://bots.discord.pw/api/bots/:id/stats"},
 			},
