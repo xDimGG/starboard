@@ -32,7 +32,7 @@ func (b *Bot) messageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 
 		if m.EditedTimestamp != "" {
 			err = b.Redis.HMSet(key, map[string]interface{}{
-				"content": m.Content,
+				"content": util.GetContent(m.Message),
 				"image":   util.GetImage(m.Message),
 			}).Err()
 		} else if image := util.GetImage(m.Message); image != "" {

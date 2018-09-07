@@ -123,7 +123,7 @@ func (b *Bot) cacheMessage(m *discordgo.Message) (err error) {
 		"channel_id": m.ChannelID,
 		"guild_id":   m.GuildID,
 
-		"content": m.Content,
+		"content": util.GetContent(m),
 		"image":   util.GetImage(m),
 	}).Err()
 	if err != nil {
@@ -156,7 +156,7 @@ func (b *Bot) createMessage(s *discordgo.Session, id, channel, guild string) (er
 			ChannelID: m.ChannelID,
 			GuildID:   c.GuildID,
 
-			Content: m.Content,
+			Content: util.GetContent(m),
 			Image:   util.GetImage(m),
 		}
 

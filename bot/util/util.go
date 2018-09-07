@@ -126,8 +126,36 @@ func GetImage(m *discordgo.Message) string {
 	}
 
 	for _, e := range m.Embeds {
-		if e.Type == "image" {
+		switch e.Type {
+		case "image":
 			return e.URL
+
+		case "rich":
+			if e.Image != nil && e.Thumbnail.Width != 0 {
+				return e.Image.URL
+			}
+			if e.Thumbnail != nil && e.Thumbnail.Width != 0 {
+				return e.Thumbnail.URL
+			}
+		}
+	}
+
+	return ""
+}
+
+// GetContent gets the content of a message
+func GetContent(m *discordgo.Message) string {
+	if m.Content != "" {
+		return m.Content
+	}
+
+	for _, e := range m.Embeds {
+		if e.Type != "rich" {
+			continue
+		}
+
+		if e.Description != "" {
+			return e.Description
 		}
 	}
 
