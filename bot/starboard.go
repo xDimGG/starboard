@@ -59,7 +59,7 @@ func (b *Bot) generateEmbed(msg *tables.Message, count int) (embed *discordgo.Me
 	embed = &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			Name: s("message.content"),
-			URL:  "https://discordapp.com/channels/" + msg.GuildID + "/" + msg.ChannelID + "/" + msg.GuildID,
+			URL:  "https://discordapp.com/channels/" + msg.GuildID + "/" + msg.ChannelID + "/" + msg.ID,
 		},
 		Color:       gray,
 		Description: msg.Content,
