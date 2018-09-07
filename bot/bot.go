@@ -54,8 +54,8 @@ type Bot struct {
 	opts *Options
 }
 
-// BotLists represents bot lists
-type BotLists []struct{ Key, URL string }
+// Lists represents bot lists
+type Lists []struct{ Key, URL string }
 
 // Options represents the options for creating a starboard instance
 type Options struct {
@@ -65,7 +65,7 @@ type Options struct {
 	OwnerID   string
 	Mode      string
 	SentryDSN string
-	BotLists  BotLists
+	Lists     Lists
 }
 
 // New creates a starboard instance
@@ -209,7 +209,7 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 			serverCount += len(s.State.Guilds)
 		}
 
-		for _, site := range b.opts.BotLists {
+		for _, site := range b.opts.Lists {
 			if site.Key == "" {
 				continue
 			}
