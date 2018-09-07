@@ -199,15 +199,25 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 		return
 	}
 
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Second * 60)
+	serverCount := 0
+	shardCount := len(b.Manager.Sessions)
 
 	for range ticker.C {
 		id := b.Manager.Sessions[0].State.User.ID
-		serverCount := 0
+		newServerCount := 0
+		newShardCount := len(b.Manager.Sessions)
 
 		for _, s := range b.Manager.Sessions {
-			serverCount += len(s.State.Guilds)
+			newServerCount += len(s.State.Guilds)
 		}
+
+		if serverCount == newServerCount && shardCount == newShardCount {
+			continue
+		}
+
+		serverCount = newServerCount
+		shardCount = newShardCount
 
 		for _, site := range b.opts.Lists {
 			if site.Key == "" {
@@ -216,7 +226,7 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 
 			data, err := json.Marshal(map[string]int{
 				"server_count": serverCount,
-				"shard_count":  len(b.Manager.Sessions),
+				"shard_count":  shardCount,
 			})
 			if err != nil {
 				b.Sentry.CaptureError(err, map[string]string{"key": site.Key, "url": site.URL})
