@@ -68,6 +68,11 @@ type Options struct {
 	Lists     Lists
 }
 
+type stats struct {
+	ServerCount int `json:"server_count"`
+	ShardCount  int `json:"shard_count"`
+}
+
 // New creates a starboard instance
 func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err error) {
 	b := &Bot{
@@ -200,40 +205,36 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 	}
 
 	ticker := time.NewTicker(time.Second * 60)
-	serverCount := 0
-	shardCount := len(b.Manager.Sessions)
+	stat := &stats{}
 
 	for range ticker.C {
-		id := b.Manager.Sessions[0].State.User.ID
-		newServerCount := 0
-		newShardCount := len(b.Manager.Sessions)
-
-		for _, s := range b.Manager.Sessions {
-			newServerCount += len(s.State.Guilds)
+		newStat := &stats{
+			ServerCount: 0,
+			ShardCount:  len(b.Manager.Sessions),
 		}
 
-		if serverCount == newServerCount && shardCount == newShardCount {
+		for _, s := range b.Manager.Sessions {
+			newStat.ServerCount += len(s.State.Guilds)
+		}
+
+		if stat.ServerCount == newStat.ServerCount && stat.ShardCount == newStat.ShardCount {
 			continue
 		}
 
-		serverCount = newServerCount
-		shardCount = newShardCount
+		stat = newStat
 
 		for _, site := range b.opts.Lists {
 			if site.Key == "" {
 				continue
 			}
 
-			data, err := json.Marshal(map[string]int{
-				"server_count": serverCount,
-				"shard_count":  shardCount,
-			})
+			data, err := json.Marshal(stat)
 			if err != nil {
 				b.Sentry.CaptureError(err, map[string]string{"key": site.Key, "url": site.URL})
 				continue
 			}
 
-			req, err := http.NewRequest("POST", strings.Replace(site.URL, ":id", id, 1), bytes.NewReader(data))
+			req, err := http.NewRequest("POST", strings.Replace(site.URL, ":id", b.Manager.Sessions[0].State.User.ID, 1), bytes.NewReader(data))
 			if err != nil {
 				b.Sentry.CaptureError(err, map[string]string{"key": site.Key, "url": site.URL})
 				continue
