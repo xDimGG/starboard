@@ -268,8 +268,14 @@ func (b *Bot) createMessage(s *discordgo.Session, id, channel, guild string) (er
 	}
 
 	msg.SentID = sent.ID
+	err = b.PG.Insert(msg)
+	if err != nil {
+		e, ok := err.(pg.Error)
+		if ok && e.IntegrityViolation() {
+			s.ChannelMessageDelete(starboard, sent.ID)
+		}
+	}
 
-	_, err = b.PG.Model(msg).OnConflict("(id) DO UPDATE SET content = excluded.content, image = excluded.image").Insert(msg)
 	return
 }
 
