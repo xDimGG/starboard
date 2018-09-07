@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/base64"
+	"path"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -144,20 +145,44 @@ func GetImage(m *discordgo.Message) string {
 }
 
 // GetContent gets the content of a message
-func GetContent(m *discordgo.Message) string {
-	if m.Content != "" {
-		return m.Content
-	}
-
+func GetContent(m *discordgo.Message) (content string) {
 	for _, e := range m.Embeds {
 		if e.Type != "rich" {
 			continue
 		}
 
 		if e.Description != "" {
-			return e.Description
+			content = e.Description
 		}
 	}
 
-	return ""
+	if content == "" {
+		content = m.Content
+	}
+
+	if len(m.Attachments) != 0 {
+		files := make([]string, 0)
+
+		for _, a := range m.Attachments {
+			switch path.Ext(a.Filename) {
+			case ".png", ".jpg", ".gif", ".webp":
+				continue
+			}
+
+			files = append(files, "[["+a.Filename+"]]("+a.URL+")")
+		}
+
+		if len(files) != 0 {
+			fileStr := strings.Join(files, " ")
+			if content != "" {
+				fileStr = "\n\n" + fileStr
+			}
+
+			if len(content)+len(fileStr) <= 2048 {
+				content += fileStr
+			}
+		}
+	}
+
+	return
 }
