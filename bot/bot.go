@@ -204,7 +204,7 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 		return
 	}
 
-	ticker := time.NewTicker(time.Second * 60)
+	ticker := time.NewTicker(time.Minute)
 	stat := &stats{}
 
 	for range ticker.C {
