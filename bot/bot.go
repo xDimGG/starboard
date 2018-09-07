@@ -1,7 +1,11 @@
 package bot
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -50,6 +54,9 @@ type Bot struct {
 	opts *Options
 }
 
+// BotLists represents bot lists
+type BotLists []struct{ Key, URL string }
+
 // Options represents the options for creating a starboard instance
 type Options struct {
 	Prefix    string
@@ -58,6 +65,7 @@ type Options struct {
 	OwnerID   string
 	Mode      string
 	SentryDSN string
+	BotLists  BotLists
 }
 
 // New creates a starboard instance
@@ -191,7 +199,51 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 		return
 	}
 
-	<-make(chan struct{})
+	ticker := time.NewTicker(time.Second * 10)
+
+	for range ticker.C {
+		id := b.Manager.Sessions[0].State.User.ID
+		serverCount := 0
+
+		for _, s := range b.Manager.Sessions {
+			serverCount += len(s.State.Guilds)
+		}
+
+		for _, site := range b.opts.BotLists {
+			if site.Key == "" {
+				continue
+			}
+
+			data, err := json.Marshal(map[string]int{
+				"server_count": serverCount,
+				"shard_count":  len(b.Manager.Sessions),
+			})
+			if err != nil {
+				b.Sentry.CaptureError(err, map[string]string{"key": site.Key, "url": site.URL})
+				continue
+			}
+
+			req, err := http.NewRequest("POST", strings.Replace(site.URL, ":id", id, 1), bytes.NewReader(data))
+			if err != nil {
+				b.Sentry.CaptureError(err, map[string]string{"key": site.Key, "url": site.URL})
+				continue
+			}
+
+			req.Header.Set("Authorization", site.Key)
+			req.Header.Set("Content-Type", "application/json")
+
+			resp, err := http.DefaultClient.Do(req)
+			if resp.StatusCode >= http.StatusBadRequest {
+				err = errors.New(resp.Status)
+			}
+
+			if err != nil {
+				b.Sentry.CaptureError(err, map[string]string{"key": site.Key, "url": site.URL})
+			}
+		}
+	}
+
+	// <-make(chan struct{})
 	return
 }
 
