@@ -131,7 +131,7 @@ func GetImage(m *discordgo.Message) string {
 			return e.URL
 
 		case "rich":
-			if e.Image != nil && e.Thumbnail.Width != 0 {
+			if e.Image != nil && e.Image.Width != 0 {
 				return e.Image.URL
 			}
 			if e.Thumbnail != nil && e.Thumbnail.Width != 0 {
