@@ -93,10 +93,8 @@ func (b *Bot) generateEmbed(msg *tables.Message, count int) (embed *discordgo.Me
 			emoji.Name = inflection.Plural(emoji.Name)
 		}
 
-		id, _ := strconv.ParseInt(msg.ID, 10, 64)
-
 		embed.Footer.Text += " " + emoji.Name
-		embed.Timestamp = time.Unix(0, ((id>>22)+1420070400000)*int64(time.Millisecond)).Format(time.RFC3339)
+		embed.Timestamp = util.SnowflakeTimestamp(msg.ID).Format(time.RFC3339)
 
 		for _, style := range styles {
 			if count >= style.max {

@@ -3,7 +3,9 @@ package util
 import (
 	"encoding/base64"
 	"path"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -182,6 +184,21 @@ func GetContent(m *discordgo.Message) (content string) {
 	}
 
 	return
+}
+
+const (
+	discordSnowflakeEpoch   = 1420070400000
+	snowflakeTimestampShift = 22
+)
+
+// SnowflakeTimestamp gets the timestamp of a Discord snowflake
+func SnowflakeTimestamp(snowflake string) time.Time {
+	id, err := strconv.ParseInt(snowflake, 10, 64)
+	if err != nil {
+		return time.Now()
+	}
+
+	return time.Unix(0, ((id>>snowflakeTimestampShift)+discordSnowflakeEpoch)*int64(time.Millisecond))
 }
 
 func isEmbeddable(filename string) bool {
