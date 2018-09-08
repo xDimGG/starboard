@@ -53,6 +53,38 @@ func (b *Bot) guildDelete(s *discordgo.Session, g *discordgo.GuildDelete) {
 	})
 }
 
+func (b *Bot) guildMemberAdd(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
+	if m.GuildID != b.opts.Guild {
+		return
+	}
+
+	s.ChannelMessageSendEmbed(b.opts.MemberLogChannel, &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			Name:    m.User.Username + " (" + m.User.ID + ")",
+			IconURL: m.User.AvatarURL(""),
+		},
+		Color:     0x5BFF5B,
+		Footer:    &discordgo.MessageEmbedFooter{Text: "Joined"},
+		Timestamp: time.Now().Format(time.RFC3339),
+	})
+}
+
+func (b *Bot) guildMemberRemove(s *discordgo.Session, m *discordgo.GuildMemberRemove) {
+	if m.GuildID != b.opts.Guild {
+		return
+	}
+
+	s.ChannelMessageSendEmbed(b.opts.MemberLogChannel, &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			Name:    m.User.Username + " (" + m.User.ID + ")",
+			IconURL: m.User.AvatarURL(""),
+		},
+		Color:     0xFF3838,
+		Footer:    &discordgo.MessageEmbedFooter{Text: "Left"},
+		Timestamp: time.Now().Format(time.RFC3339),
+	})
+}
+
 func (b *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.GuildID == "" {
 		return

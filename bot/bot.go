@@ -60,14 +60,17 @@ type Lists []struct{ Key, URL string }
 
 // Options represents the options for creating a starboard instance
 type Options struct {
-	Prefix          string
-	Token           string
-	Locales         string
-	OwnerID         string
-	Mode            string
-	SentryDSN       string
-	Lists           Lists
-	GuildLogChannel string
+	Prefix    string
+	Token     string
+	Locales   string
+	OwnerID   string
+	Mode      string
+	SentryDSN string
+	Lists     Lists
+
+	Guild            string
+	GuildLogChannel  string
+	MemberLogChannel string
 }
 
 type stats struct {
@@ -136,6 +139,11 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 		if b.opts.GuildLogChannel != "" {
 			s.AddHandler(b.guildCreate)
 			s.AddHandler(b.guildDelete)
+		}
+
+		if b.opts.Guild != "" && b.opts.MemberLogChannel != "" {
+			s.AddHandler(b.guildMemberAdd)
+			s.AddHandler(b.guildMemberRemove)
 		}
 
 		s.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
