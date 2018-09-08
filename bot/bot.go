@@ -51,7 +51,8 @@ type Bot struct {
 	Settings  *settings.Settings
 	StartTime time.Time
 
-	opts *Options
+	expectedGuilds map[*discordgo.Session]int
+	opts           *Options
 }
 
 // Lists represents bot lists
@@ -59,13 +60,14 @@ type Lists []struct{ Key, URL string }
 
 // Options represents the options for creating a starboard instance
 type Options struct {
-	Prefix    string
-	Token     string
-	Locales   string
-	OwnerID   string
-	Mode      string
-	SentryDSN string
-	Lists     Lists
+	Prefix          string
+	Token           string
+	Locales         string
+	OwnerID         string
+	Mode            string
+	SentryDSN       string
+	Lists           Lists
+	GuildLogChannel string
 }
 
 type stats struct {
@@ -79,7 +81,9 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 		PG:        pg.Connect(pgOpts),
 		Redis:     redis.NewClient(redisOpts),
 		StartTime: time.Now(),
-		opts:      botOpts,
+
+		expectedGuilds: make(map[*discordgo.Session]int),
+		opts:           botOpts,
 	}
 
 	b.Sentry, err = raven.New(botOpts.SentryDSN)
@@ -127,9 +131,12 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 		s.State.TrackPresences = false
 		s.State.TrackVoice = false
 
-		s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-			s.UpdateStatus(0, "@"+r.User.Username+" help | (just reset database, update your settings)")
-		})
+		s.AddHandler(b.ready)
+
+		if b.opts.GuildLogChannel != "" {
+			s.AddHandler(b.guildCreate)
+			s.AddHandler(b.guildDelete)
+		}
 
 		s.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 			b.Sentry.CapturePanic(func() {

@@ -28,6 +28,7 @@ func main() {
 				{os.Getenv("DBL_KEY"), "https://discordbots.org/api/bots/:id/stats"},
 				{os.Getenv("PW_BOTS_KEY"), "https://bots.discord.pw/api/bots/:id/stats"},
 			},
+			GuildLogChannel: os.Getenv("BOT_GUILD_LOG_CHANNEL"),
 		},
 		&pg.Options{
 			Addr:     os.Getenv("POSTGRES_ADDR"),

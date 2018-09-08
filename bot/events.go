@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"time"
+
 	"github.com/go-pg/pg"
 
 	"github.com/xdimgg/starboard/bot/tables"
@@ -8,6 +10,48 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/xdimgg/starboard/bot/util"
 )
+
+func getIconURL(g *discordgo.Guild) string {
+	if g.Icon == "" {
+		return ""
+	}
+
+	return discordgo.EndpointGuildIcon(g.ID, g.Icon)
+}
+
+func (b *Bot) ready(s *discordgo.Session, r *discordgo.Ready) {
+	b.expectedGuilds[s] = len(r.Guilds)
+	s.UpdateStatus(0, "@"+r.User.Username+" help")
+}
+
+func (b *Bot) guildCreate(s *discordgo.Session, g *discordgo.GuildCreate) {
+	if b.expectedGuilds[s] != 0 {
+		b.expectedGuilds[s]--
+		return
+	}
+
+	s.ChannelMessageSendEmbed(b.opts.GuildLogChannel, &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			Name:    g.Name + " (" + g.ID + ")",
+			IconURL: getIconURL(g.Guild),
+		},
+		Color:     0x5BFF5B,
+		Footer:    &discordgo.MessageEmbedFooter{Text: "Joined"},
+		Timestamp: time.Now().Format(time.RFC3339),
+	})
+}
+
+func (b *Bot) guildDelete(s *discordgo.Session, g *discordgo.GuildDelete) {
+	s.ChannelMessageSendEmbed(b.opts.GuildLogChannel, &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			Name:    g.Name + " (" + g.ID + ")",
+			IconURL: getIconURL(g.Guild),
+		},
+		Color:     0xFF3838,
+		Footer:    &discordgo.MessageEmbedFooter{Text: "Left"},
+		Timestamp: time.Now().Format(time.RFC3339),
+	})
+}
 
 func (b *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.GuildID == "" {
