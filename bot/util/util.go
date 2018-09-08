@@ -121,7 +121,7 @@ func GetMissing(have, want int, l func(string, ...interface{}) string) string {
 // GetImage gets the image attached to a message
 func GetImage(m *discordgo.Message) string {
 	for _, a := range m.Attachments {
-		if a.Width != 0 {
+		if a.Width != 0 && isEmbeddable(a.Filename) {
 			return a.URL
 		}
 	}
@@ -164,12 +164,9 @@ func GetContent(m *discordgo.Message) (content string) {
 		files := make([]string, 0)
 
 		for _, a := range m.Attachments {
-			switch path.Ext(a.Filename) {
-			case ".png", ".jpg", ".gif", ".webp":
-				continue
+			if !isEmbeddable(a.Filename) {
+				files = append(files, "[["+a.Filename+"]]("+a.URL+")")
 			}
-
-			files = append(files, "[["+a.Filename+"]]("+a.URL+")")
 		}
 
 		if len(files) != 0 {
@@ -185,4 +182,13 @@ func GetContent(m *discordgo.Message) (content string) {
 	}
 
 	return
+}
+
+func isEmbeddable(filename string) bool {
+	switch strings.ToLower(path.Ext(filename)) {
+	case ".png", ".jpg", ".jpeg", ".gif", ".webp":
+		return true
+	}
+
+	return false
 }
