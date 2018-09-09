@@ -262,11 +262,11 @@ func (b *Bot) messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReact
 		}
 	}
 
-	err = b.PG.Insert(&tables.Reaction{
+	_, err = b.PG.Model(&tables.Reaction{
 		Bot:       bot,
 		UserID:    m.UserID,
 		MessageID: m.MessageID,
-	})
+	}).OnConflict("DO NOTHING").Insert()
 	if err != nil {
 		b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_REACTION_ADD"})
 		return

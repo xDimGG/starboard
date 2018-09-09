@@ -205,7 +205,7 @@ func (b *Bot) createMessage(s *discordgo.Session, id, channel, guild string) (er
 			}
 
 			if len(reactions) != 0 {
-				err = b.PG.Insert(&reactions)
+				_, err = b.PG.Model(&reactions).OnConflict("DO NOTHING").Insert()
 				if err != nil {
 					return err
 				}
