@@ -271,6 +271,7 @@ func (b *Bot) createMessage(s *discordgo.Session, id, channel, guild string) (er
 		e, ok := err.(pg.Error)
 		if ok && e.IntegrityViolation() {
 			s.ChannelMessageDelete(starboard, sent.ID)
+			return nil
 		}
 	}
 
