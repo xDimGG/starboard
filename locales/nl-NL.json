@@ -105,6 +105,8 @@
 	"settings.restrictions.number": "%s must be a number.",
 	"settings.restrictions.min": "%s kan niet minder zijn dan %d.",
 	"settings.restrictions.max": "%s kan niet meer zijn dan %d.",
+	"settings.restrictions.min_percentage": "%s kan niet minder zijn dan %f%%.",
+	"settings.restrictions.max_percentage": "%s kan niet meer zijn dan %f%%.",
 	"settings.restrictions.emoji": "%s moet een geldige Emoji of Discord-emoji zijn.",
 	"settings.restrictions.channel": "%s moet een geldig Discord-kanaal zijn.",
 	"settings.restrictions.channel_perms": "Ik heb geen toegang tot dat kanaal.",

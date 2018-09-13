@@ -10,22 +10,25 @@ import (
 )
 
 func serialize(v interface{}) string {
-	switch v.(type) {
+	switch val := v.(type) {
 	case int:
-		return "i" + strconv.Itoa(v.(int))
+		return "i" + strconv.Itoa(val)
+
+	case float64:
+		return "f" + strconv.FormatFloat(val, 'f', -1, 64)
 
 	case bool:
-		if v.(bool) {
+		if val {
 			return "1"
 		}
 
 		return "0"
 
 	case string:
-		return "s" + v.(string)
+		return "s" + val
 
 	case *util.Emoji:
-		e := v.(*util.Emoji)
+		e := val
 		var str string
 		if e.Animated {
 			str = "a"
@@ -50,6 +53,11 @@ func deserialize(str string) interface{} {
 	if str[0] == 'i' {
 		i, _ := strconv.Atoi(str[1:])
 		return i
+	}
+
+	if str[0] == 'f' {
+		f, _ := strconv.ParseFloat(str[1:], 64)
+		return f
 	}
 
 	if str[0] == 's' {

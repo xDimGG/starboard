@@ -110,6 +110,8 @@
 	"settings.restrictions.number": "%s must be a number.",
 	"settings.restrictions.min": "%s can't be less than %d.",
 	"settings.restrictions.max": "%s can't be greater than %d.",
+	"settings.restrictions.min_percentage": "%s can't be less than %f%%.",
+	"settings.restrictions.max_percentage": "%s can't be greater than %f%%.",
 	"settings.restrictions.emoji": "%s must be a valid emoji or Discord emoji.",
 	"settings.restrictions.channel": "%s must be a valid Discord channel.",
 	"settings.restrictions.channel_perms": "I don't have access to that channel.",
@@ -134,6 +136,7 @@
 	"settings.remove_bot_stars": "Remove-bot-stars",
 	"settings.save_deleted_messages": "Save-deleted-messages",
 	"settings.block_mode": "Block-mode",
+	"settings.random_star_probability": "Random-star-probability",
 
 	"settings.to_key.prefix": "prefix",
 	"settings.to_key.language": "language",
@@ -146,5 +149,8 @@
 	"settings.to_key.minimal": "minimal",
 	"settings.to_key.removebotstars": "remove_bot_stars",
 	"settings.to_key.savedeletedmessages": "save_deleted_messages",
-	"settings.to_key.blockmode": "block_mode"
+	"settings.to_key.blockmode": "block_mode",
+	"settings.to_key.starprobability": "random_star_probability",
+	"settings.to_key.randomstar": "random_star_probability",
+	"settings.to_key.randomstarprobability": "random_star_probability"
 }

@@ -316,6 +316,22 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 		} else {
 			value = "whitelist"
 		}
+	case settingRandomStarProbability:
+		f, err := strconv.ParseFloat(strings.TrimSuffix(arg, "%"), 64)
+		if err != nil {
+			ctx.Say("settings.restrictions.number", l)
+			return nil
+		}
+		if f > 10 {
+			ctx.Say("settings.restrictions.max_percentage", l, 5)
+			return nil
+		}
+		if f < 0.000001 {
+			ctx.Say("settings.restrictions.min_percentage", l, 0.000001)
+			return nil
+		}
+
+		value = f
 	}
 
 	err = b.Settings.Set(ctx.GuildID, key, value)

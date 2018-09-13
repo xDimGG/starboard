@@ -26,7 +26,7 @@ type Emoji struct {
 }
 
 // String returns the emoji as a Discord string
-func (e Emoji) String() string {
+func (e *Emoji) String() string {
 	if e.Unicode != "" {
 		return e.Unicode
 	}
@@ -41,7 +41,7 @@ func (e Emoji) String() string {
 }
 
 // URL returns the emoji's image URL
-func (e Emoji) URL() string {
+func (e *Emoji) URL() string {
 	if e.ID == "" {
 		return ""
 	}
@@ -55,6 +55,15 @@ func (e Emoji) URL() string {
 	}
 
 	return url
+}
+
+// API returns the emoji's API identifier
+func (e *Emoji) API() string {
+	if e.Unicode != "" {
+		return e.Unicode
+	}
+
+	return e.Name + ":" + e.ID
 }
 
 // EscapeMarkdown escapes Discord markdown

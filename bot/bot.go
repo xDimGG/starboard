@@ -26,17 +26,18 @@ import (
 )
 
 const (
-	settingPrefix              = "prefix"
-	settingLanguage            = "language"
-	settingMinimum             = "minimum"
-	settingSelfStar            = "self_star"
-	settingEmoji               = "emoji"
-	settingChannel             = "channel"
-	settingNSFWChannel         = "nsfw_channel"
-	settingMinimal             = "minimal"
-	settingRemoveBotStars      = "remove_bot_stars"
-	settingSaveDeletedMessages = "save_deleted_messages"
-	settingBlockMode           = "block_mode"
+	settingPrefix                = "prefix"
+	settingLanguage              = "language"
+	settingMinimum               = "minimum"
+	settingSelfStar              = "self_star"
+	settingEmoji                 = "emoji"
+	settingChannel               = "channel"
+	settingNSFWChannel           = "nsfw_channel"
+	settingMinimal               = "minimal"
+	settingRemoveBotStars        = "remove_bot_stars"
+	settingSaveDeletedMessages   = "save_deleted_messages"
+	settingBlockMode             = "block_mode"
+	settingRandomStarProbability = "random_star_probability"
 
 	settingNone = "none"
 )
@@ -108,12 +109,13 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 			Name:    "star",
 			Unicode: "⭐",
 		},
-		settingChannel:             settingNone,
-		settingNSFWChannel:         settingNone,
-		settingMinimal:             false,
-		settingRemoveBotStars:      true,
-		settingSaveDeletedMessages: false,
-		settingBlockMode:           "blacklist",
+		settingChannel:               settingNone,
+		settingNSFWChannel:           settingNone,
+		settingMinimal:               false,
+		settingRemoveBotStars:        true,
+		settingSaveDeletedMessages:   false,
+		settingBlockMode:             "blacklist",
+		settingRandomStarProbability: float64(0),
 	})
 	if err != nil {
 		return
@@ -309,6 +311,10 @@ func getSettingString(key string, value interface{}) string {
 
 	if key == settingLanguage {
 		value = util.Languages[value.(string)]
+	}
+
+	if key == settingRandomStarProbability {
+		return strconv.FormatFloat(value.(float64), 'f', -1, 64) + "%"
 	}
 
 	return fmt.Sprintf("%v", value)

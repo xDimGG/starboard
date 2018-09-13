@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -20,6 +21,10 @@ var styles = []struct{ max, color int }{
 	{50, 0xFFB549},
 	{10, 0xFFB13F},
 	{0, 0xFFAC33},
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }
 
 func (b *Bot) getStarboard(s *discordgo.Session, msg *tables.Message) (starboard string) {

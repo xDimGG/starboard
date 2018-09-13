@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"math/rand"
 	"time"
 
 	"github.com/go-pg/pg"
@@ -93,6 +94,23 @@ func (b *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	err := b.cacheMessage(m.Message)
 	if err != nil {
 		b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_CREATE"})
+	}
+
+	probability := b.Settings.Get(m.GuildID, settingRandomStarProbability).(float64)
+	if probability == 0 {
+		return
+	}
+
+	if rand.Float64() <= (probability / 100) {
+		perms, err := s.State.UserChannelPermissions(s.State.User.ID, m.ChannelID)
+		if err != nil || perms&discordgo.PermissionAddReactions != discordgo.PermissionAddReactions {
+			return
+		}
+
+		err = s.MessageReactionAdd(m.ChannelID, m.ID, b.Settings.GetEmoji(m.GuildID, settingEmoji).API())
+		if err != nil {
+			return
+		}
 	}
 }
 
@@ -246,11 +264,11 @@ func (b *Bot) messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReact
 
 	member, err := s.State.Member(m.GuildID, m.UserID)
 	perms, _ := s.State.UserChannelPermissions(m.UserID, m.ChannelID)
-	mm := perms&discordgo.PermissionManageMessages != 0
 	bot := false
 
-	if err == nil {
-		if member.User.Bot {
+	if m.UserID != s.State.User.ID {
+		mm := perms&discordgo.PermissionManageMessages == discordgo.PermissionManageMessages
+		if err == nil && member.User.Bot {
 			bot = true
 
 			if mm && b.Settings.GetBool(m.GuildID, settingRemoveBotStars) {
