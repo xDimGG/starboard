@@ -326,7 +326,7 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 			ctx.Say("settings.restrictions.max_percentage", l, 5)
 			return nil
 		}
-		if f < 0.000001 {
+		if f < 0.000001 && f != 0 {
 			ctx.Say("settings.restrictions.min_percentage", l, 0.000001)
 			return nil
 		}
