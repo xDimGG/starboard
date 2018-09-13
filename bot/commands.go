@@ -21,6 +21,11 @@ import (
 	"github.com/xdimgg/starboard/bot/commandler"
 )
 
+const (
+	maxStarProbability float64 = 5
+	minStarProbability         = 0.000001
+)
+
 const pageSize = 10
 
 var (
@@ -322,12 +327,12 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 			ctx.Say("settings.restrictions.number", l)
 			return nil
 		}
-		if f > 10 {
-			ctx.Say("settings.restrictions.max_percentage", l, 5)
+		if f > maxStarProbability {
+			ctx.Say("settings.restrictions.max_percentage", l, maxStarProbability)
 			return nil
 		}
-		if f < 0.000001 && f != 0 {
-			ctx.Say("settings.restrictions.min_percentage", l, 0.000001)
+		if f < minStarProbability && f != 0 {
+			ctx.Say("settings.restrictions.min_percentage", l, minStarProbability)
 			return nil
 		}
 
