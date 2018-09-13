@@ -1,7 +1,7 @@
 FROM golang:alpine
 
 WORKDIR /go/src
-ADD . github.com/xdimgg/starboard
+COPY . github.com/xdimgg/starboard
 WORKDIR /go/src/github.com/xdimgg/starboard
 
 RUN apk update
@@ -9,6 +9,7 @@ RUN apk upgrade
 RUN apk add git curl --no-cache
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 RUN dep ensure
-RUN go install
+RUN go build -o /bin/starboard
+RUN apk del golang*
 
-ENTRYPOINT /go/bin/starboard
+ENTRYPOINT /bin/starboard
