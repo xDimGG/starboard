@@ -12,10 +12,9 @@ import (
 // Settings represents the settings struct
 type Settings struct {
 	db       *pg.DB
-	pMu      *sync.Mutex
-	dMu      *sync.Mutex
-	prefixes map[string]string
-	Defaults map[string]string
+	cMu      *sync.Mutex
+	cache    map[string]*sync.Map
+	Defaults *sync.Map
 }
 
 // Setting represents a setting database entry
@@ -29,14 +28,13 @@ type Setting struct {
 func New(db *pg.DB, defaults map[string]interface{}) (s *Settings, err error) {
 	s = &Settings{
 		db:       db,
-		dMu:      &sync.Mutex{},
-		pMu:      &sync.Mutex{},
-		prefixes: make(map[string]string),
-		Defaults: make(map[string]string),
+		cMu:      &sync.Mutex{},
+		cache:    make(map[string]*sync.Map),
+		Defaults: &sync.Map{},
 	}
 
 	for key, value := range defaults {
-		s.Defaults[key] = serialize(value)
+		s.Defaults.Store(key, value)
 	}
 
 	err = s.db.CreateTable((*Setting)(nil), &orm.CreateTableOptions{IfNotExists: true})
@@ -45,73 +43,60 @@ func New(db *pg.DB, defaults map[string]interface{}) (s *Settings, err error) {
 	}
 
 	var settings []Setting
-	err = s.db.Model(&settings).Where("key = 'prefix'").Returning("id, value").Select()
+	err = s.db.Model(&settings).Select()
 	if err != nil {
 		return
 	}
 
 	for _, row := range settings {
-		s.setPrefix(row.ID, deserialize(row.Value).(string))
+		if _, ok := s.cache[row.ID]; !ok {
+			s.cache[row.ID] = &sync.Map{}
+		}
+
+		s.cache[row.ID].Store(row.Key, deserialize(row.Value))
 	}
 
 	return
 }
 
-func (s *Settings) getDefault(key string) interface{} {
-	s.dMu.Lock()
-	defer s.dMu.Unlock()
-	return deserialize(s.Defaults[key])
-}
-
-func (s *Settings) getPrefix(id string) string {
-	s.pMu.Lock()
-	defer s.pMu.Unlock()
-	return s.prefixes[id]
-}
-
-func (s *Settings) setPrefix(id, value string) {
-	s.pMu.Lock()
-	s.prefixes[id] = value
-	s.pMu.Unlock()
-}
-
 // Get gets a setting
 func (s *Settings) Get(id, key string) interface{} {
-	if key == "prefix" {
-		prefix := s.getPrefix(id)
+	s.cMu.Lock()
+	cache, ok := s.cache[id]
+	s.cMu.Unlock()
 
-		if prefix == "" {
-			return s.getDefault(key).(string)
+	if ok {
+		value, ok := cache.Load(key)
+		if ok {
+			return value
 		}
-
-		return prefix
 	}
 
-	row := &Setting{ID: id, Key: key}
-	err := s.db.Select(row)
-	if err == nil {
-		return deserialize(row.Value)
-	}
-
-	return s.getDefault(key)
+	value, _ := s.Defaults.Load(key)
+	return value
 }
 
 // GetID gets all the settings of an ID
 func (s *Settings) GetID(id string) map[string]interface{} {
-	var rows []Setting
-	s.db.Model(&rows).Where("id = ?", id).Select()
+	s.cMu.Lock()
+	cache, ok := s.cache[id]
+	s.cMu.Unlock()
 
-	settings := make(map[string]interface{})
+	values := make(map[string]interface{})
 
-	for k, v := range s.Defaults {
-		settings[k] = deserialize(v)
+	s.Defaults.Range(func(key, value interface{}) bool {
+		values[key.(string)] = value
+		return true
+	})
+
+	if ok {
+		cache.Range(func(key, value interface{}) bool {
+			values[key.(string)] = value
+			return true
+		})
 	}
 
-	for _, row := range rows {
-		settings[row.Key] = deserialize(row.Value)
-	}
-
-	return settings
+	return values
 }
 
 // GetInt gets a setting as an int
@@ -136,9 +121,14 @@ func (s *Settings) GetEmoji(id, key string) *util.Emoji {
 
 // Set sets a setting
 func (s *Settings) Set(id, key string, value interface{}) (err error) {
-	if key == "prefix" {
-		s.setPrefix(id, value.(string))
+	s.cMu.Lock()
+	_, ok := s.cache[id]
+	if !ok {
+		s.cache[id] = &sync.Map{}
 	}
+
+	s.cache[id].Store(key, value)
+	s.cMu.Unlock()
 
 	_, err = s.db.
 		Model(&Setting{ID: id, Key: key, Value: serialize(value)}).
