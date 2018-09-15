@@ -373,7 +373,7 @@ func (b *Bot) runStats(ctx *commandler.Context) (err error) {
 				Value: ctx.S(
 					"commands.stats.phrase.system_value",
 					time.Since(b.StartTime),
-					humanize.Bytes(m.HeapInuse),
+					humanize.Bytes(m.Alloc),
 					humanize.Comma(int64(runtime.NumCPU())),
 					strings.TrimPrefix(runtime.Version(), "go"),
 					discordgo.VERSION,
