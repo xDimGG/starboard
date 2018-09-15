@@ -12,7 +12,7 @@ import (
 // Settings represents the settings struct
 type Settings struct {
 	db       *pg.DB
-	cMu      *sync.Mutex
+	mu       *sync.RWMutex
 	cache    map[string]*sync.Map
 	Defaults *sync.Map
 }
@@ -28,7 +28,7 @@ type Setting struct {
 func New(db *pg.DB, defaults map[string]interface{}) (s *Settings, err error) {
 	s = &Settings{
 		db:       db,
-		cMu:      &sync.Mutex{},
+		mu:       &sync.RWMutex{},
 		cache:    make(map[string]*sync.Map),
 		Defaults: &sync.Map{},
 	}
@@ -61,9 +61,9 @@ func New(db *pg.DB, defaults map[string]interface{}) (s *Settings, err error) {
 
 // Get gets a setting
 func (s *Settings) Get(id, key string) interface{} {
-	s.cMu.Lock()
+	s.mu.RLock()
 	cache, ok := s.cache[id]
-	s.cMu.Unlock()
+	s.mu.RUnlock()
 
 	if ok {
 		value, ok := cache.Load(key)
@@ -78,9 +78,9 @@ func (s *Settings) Get(id, key string) interface{} {
 
 // GetID gets all the settings of an ID
 func (s *Settings) GetID(id string) map[string]interface{} {
-	s.cMu.Lock()
+	s.mu.RLock()
 	cache, ok := s.cache[id]
-	s.cMu.Unlock()
+	s.mu.RUnlock()
 
 	values := make(map[string]interface{})
 
@@ -121,14 +121,19 @@ func (s *Settings) GetEmoji(id, key string) *util.Emoji {
 
 // Set sets a setting
 func (s *Settings) Set(id, key string, value interface{}) (err error) {
-	s.cMu.Lock()
-	_, ok := s.cache[id]
+	s.mu.RLock()
+	cache, ok := s.cache[id]
+	s.mu.RUnlock()
+
 	if !ok {
-		s.cache[id] = &sync.Map{}
+		cache = &sync.Map{}
+
+		s.mu.Lock()
+		s.cache[id] = cache
+		s.mu.Unlock()
 	}
 
-	s.cache[id].Store(key, value)
-	s.cMu.Unlock()
+	cache.Store(key, value)
 
 	_, err = s.db.
 		Model(&Setting{ID: id, Key: key, Value: serialize(value)}).
