@@ -62,7 +62,7 @@
 	"commands.stats.description": "Laat een aantal statistieken zien",
 	"commands.stats.phrase.title": "Statistieken",
 	"commands.stats.phrase.system": "Systeem",
-	"commands.stats.phrase.system_value": "• Uptime: %s\n• Geheugen: %s\n• [Go](https://golang.org): %s\n• [DiscordGo](https://github.com/bwmarrin/discordgo): %s",
+	"commands.stats.phrase.system_value": "• Uptime: %s\n• Geheugen: %s\n• CPUs: %s\n• [Go](https://golang.org): %s\n• [DiscordGo](https://github.com/bwmarrin/discordgo): %s",
 	"commands.stats.phrase.bot": "Bot",
 	"commands.stats.phrase.bot_value": "• Shards: %s\n• Servers: %s\n• Channels: %s\n• Members: %s",
 	"commands.stats.phrase.starboard": "Starboard",

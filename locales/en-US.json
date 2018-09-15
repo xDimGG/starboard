@@ -67,7 +67,7 @@
 	"commands.stats.description": "Shows some of my stats.",
 	"commands.stats.phrase.title": "Stats",
 	"commands.stats.phrase.system": "System",
-	"commands.stats.phrase.system_value": "• Uptime: %s\n• Memory: %s\n• [Go](https://golang.org): %s\n• [DiscordGo](https://github.com/bwmarrin/discordgo): %s",
+	"commands.stats.phrase.system_value": "• Uptime: %s\n• Memory: %s\n• CPUs: %s\n• [Go](https://golang.org): %s\n• [DiscordGo](https://github.com/bwmarrin/discordgo): %s",
 	"commands.stats.phrase.bot": "Bot",
 	"commands.stats.phrase.bot_value": "• Shards: %s\n• Servers: %s\n• Channels: %s\n• Members: %s",
 	"commands.stats.phrase.starboard": "Starboard",
