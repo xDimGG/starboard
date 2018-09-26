@@ -61,6 +61,7 @@
 	"commands.fix.description": "Fixes a messages star count.",
 	"commands.fix.phrase.id": "Invalid message ID/link provided.",
 	"commands.fix.phrase.permissions": "I am not permitted to read that channels messages.",
+	"commands.fix.phrase.unknown_message": "I could not find a message for the provided ID/link.",
 	"commands.fix.phrase.done": "Message has been fixed.",
 
 	"commands.stats.name": "stats",

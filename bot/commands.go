@@ -580,6 +580,11 @@ func (b *Bot) runFix(ctx *commandler.Context) (err error) {
 
 	err = b.updateMessage(ctx.Session, messageID, channelID, ctx.GuildID)
 	if err != nil {
+		if rErr, ok := err.(*discordgo.RESTError); ok && rErr.Message != nil && rErr.Message.Code == discordgo.ErrCodeUnknownMessage {
+			ctx.Say("commands.fix.phrase.unknown_message")
+			return nil
+		}
+
 		return
 	}
 
