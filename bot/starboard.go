@@ -326,6 +326,25 @@ func (b *Bot) updateMessage(s *discordgo.Session, id, channel, guild string) (er
 		return
 	}
 
-	_, err = s.ChannelMessageEditEmbed(starboard, msg.SentID, b.generateEmbed(msg, count))
+	embed := b.generateEmbed(msg, count)
+	_, err = s.ChannelMessageEditEmbed(starboard, msg.SentID, embed)
+	if err == nil {
+		return
+	}
+
+	if rErr, ok := err.(*discordgo.RESTError); ok && rErr.Message != nil {
+		if rErr.Message.Code != discordgo.ErrCodeUnknownMessage {
+			return
+		}
+
+		sent, err := s.ChannelMessageSendEmbed(starboard, embed)
+		if err != nil {
+			return err
+		}
+
+		_, err = b.PG.Model(&tables.Message{ID: id}).WherePK().Set("sent_id = ?", sent.ID).Update()
+		return err
+	}
+
 	return
 }
