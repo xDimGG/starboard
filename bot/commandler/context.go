@@ -41,6 +41,32 @@ func (ctx *Context) S(code string, values ...interface{}) string {
 	return everyoneReplacer.Replace(translation)
 }
 
+// List generates a localized list string
+func (ctx *Context) List(code string, values ...string) string {
+	if len(values) == 1 {
+		return values[0]
+	}
+
+	list := ctx.S("list.or.prefix")
+
+	if len(values) == 2 {
+		return list + ctx.S("list.or.double", "``"+values[0]+"``", "``"+values[1]+"``")
+	}
+
+	seperator := ctx.S("list.or.seperator")
+
+	for i, value := range values {
+		list += "``" + value + "``"
+		if i == len(values)-1 {
+			list += seperator
+		} else {
+			list += ctx.S("list.or.finalSeperator")
+		}
+	}
+
+	return list
+}
+
 // SayRaw acts as an alias for ChannelMessageSend
 func (ctx *Context) SayRaw(content string) (*discordgo.Message, error) {
 	return ctx.Session.ChannelMessageSend(ctx.ChannelID, content)
@@ -49,6 +75,11 @@ func (ctx *Context) SayRaw(content string) (*discordgo.Message, error) {
 // Say acts as an alias for ChannelMessageSend with localization
 func (ctx *Context) Say(code string, values ...interface{}) (*discordgo.Message, error) {
 	return ctx.SayRaw(ctx.S(code, values...))
+}
+
+// SayList acts as an alias for ChannelMessageSend with List
+func (ctx *Context) SayList(code, value0 string, values ...string) (*discordgo.Message, error) {
+	return ctx.Say(code, value0, ctx.List(code, values...))
 }
 
 // Edit edit's a message using localization

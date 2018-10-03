@@ -1,6 +1,11 @@
 {
 	"error": "An error occurred while executing this command. My owner will be looking into it as soon as they can!",
 
+	"list.or.prefix": "either ",
+	"list.or.double": "%s or %s",
+	"list.or.seperator": ", ",
+	"list.or.finalSeperator": ", or ",
+
 	"message.content": "Content",
 	"message.author": "Author",
 	"message.channel": "Channel",
@@ -83,6 +88,7 @@
 	"commands.block.usage": "[add|remove] [@user|#channel|all]...",
 	"commands.block.aliases": ["whitelist", "blacklist", "blocks"],
 	"commands.block.description": "Blocks a user or channel.",
+	"commands.block.phrase.action": "Action",
 	"commands.block.phrase.missing": "You must provide at least one user or channel.",
 	"commands.block.phrase.add": "add",
 	"commands.block.phrase.remove": "remove",
@@ -107,7 +113,7 @@
 	"commands.config.aliases": ["setting", "settings"],
 
 	"settings.restrictions.max_length": "%s can't be longer than %d characters.",
-	"settings.restrictions.one_of": "%s must be one of: %s",
+	"settings.restrictions.one_of": "%s must be %s.",
 	"settings.restrictions.number": "%s must be a number.",
 	"settings.restrictions.min": "%s can't be less than %d.",
 	"settings.restrictions.max": "%s can't be greater than %d.",

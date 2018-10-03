@@ -229,10 +229,10 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 		if b.Locales.Asset(arg) == nil {
 			var langs []string
 			for lang := range b.Locales.Assets {
-				langs = append(langs, "``"+util.Languages[lang]+"``")
+				langs = append(langs, util.Languages[lang])
 			}
 
-			ctx.Say("settings.restrictions.one_of", l, strings.Join(langs, ", "))
+			ctx.SayList("settings.restrictions.one_of", l, langs...)
 			return
 		}
 
@@ -260,7 +260,7 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 		arg = strings.ToLower(arg)
 
 		if arg != t && arg != f {
-			ctx.Say("settings.restrictions.one_of", l, "``"+t+"``, ``"+f+"``")
+			ctx.SayList("settings.restrictions.one_of", l, t, f)
 			return
 		}
 
@@ -312,7 +312,7 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 		arg = strings.ToLower(arg)
 
 		if arg != b && arg != w {
-			ctx.Say("settings.restrictions.one_of", l, "``"+b+"``, ``"+w+"``")
+			ctx.SayList("settings.restrictions.one_of", l, b, w)
 			return
 		}
 
@@ -441,7 +441,7 @@ func (b *Bot) runBlock(ctx *commandler.Context) (err error) {
 		all := ctx.S("commands.block.phrase.all")
 
 		if action != add && action != remove {
-			ctx.Say("settings.restrictions.one_of", "``"+add+"``, ``"+remove+"``")
+			ctx.SayList("settings.restrictions.one_of", ctx.S("commands.block.phrase.action"), add, remove)
 			return nil
 		}
 
