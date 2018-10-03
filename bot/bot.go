@@ -30,6 +30,7 @@ const (
 	settingLanguage              = "language"
 	settingMinimum               = "minimum"
 	settingSelfStar              = "self_star"
+	settingSelfStarWarning       = "self_star_warning"
 	settingEmoji                 = "emoji"
 	settingChannel               = "channel"
 	settingNSFWChannel           = "nsfw_channel"
@@ -101,10 +102,11 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 	}
 
 	b.Settings, err = settings.New(b.PG, map[string]interface{}{
-		settingPrefix:   b.opts.Prefix,
-		settingLanguage: "en-US",
-		settingMinimum:  1,
-		settingSelfStar: false,
+		settingPrefix:          b.opts.Prefix,
+		settingLanguage:        "en-US",
+		settingMinimum:         1,
+		settingSelfStar:        false,
+		settingSelfStarWarning: false,
 		settingEmoji: &util.Emoji{
 			Name:    "star",
 			Unicode: "⭐",

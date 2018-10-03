@@ -10,6 +10,8 @@
 	"message.author": "Author",
 	"message.channel": "Channel",
 
+	"starboard.self_star.warning": "%s, you can't star your own messages.",
+
 	"permissions.CREATE_INSTANT_INVITE": "Create Instant Invite",
 	"permissions.KICK_MEMBERS": "Kick Members",
 	"permissions.BAN_MEMBERS": "Ban Members",
@@ -136,6 +138,7 @@
 	"settings.language": "Language",
 	"settings.minimum": "Minimum",
 	"settings.self_star": "Self-star",
+	"settings.self_star_warning": "Self-star-warning",
 	"settings.emoji": "Emoji",
 	"settings.channel": "Channel",
 	"settings.nsfw_channel": "NSFW-channel",
@@ -149,6 +152,7 @@
 	"settings.to_key.language": "language",
 	"settings.to_key.minimum": "minimum",
 	"settings.to_key.selfstar": "self_star",
+	"settings.to_key.selfstarwarning": "self_star_warning",
 	"settings.to_key.emoji": "emoji",
 	"settings.to_key.channel": "channel",
 	"settings.to_key.nsfwchannel": "nsfw_channel",

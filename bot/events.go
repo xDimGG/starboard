@@ -277,6 +277,25 @@ func (b *Bot) messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReact
 					return
 				}
 			}
+		} else if mm && !b.Settings.GetBool(m.GuildID, settingSelfStar) {
+			msg, err := b.getMessage(s, m.MessageID, m.ChannelID)
+			if err != nil {
+				b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_REACTION_ADD"})
+				return
+			}
+
+			if msg.AuthorID == m.UserID {
+				err := s.MessageReactionRemove(m.ChannelID, m.MessageID, m.Emoji.APIName(), m.UserID)
+				if err == nil {
+					key := "warned:" + m.UserID
+
+					if b.Redis.Exists(key).Val() == 0 && b.Settings.GetBool(m.GuildID, settingSelfStarWarning) {
+						b.Redis.Set(key, "", time.Hour)
+						l := b.Locales.Language(b.Settings.GetString(msg.GuildID, settingLanguage))
+						s.ChannelMessageSend(m.ChannelID, l("starboard.self_star.warning", "<@"+m.UserID+">"))
+					}
+				}
+			}
 		}
 	}
 

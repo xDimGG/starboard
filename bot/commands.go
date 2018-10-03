@@ -254,7 +254,7 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 		}
 
 		value = i
-	case settingSelfStar, settingMinimal, settingRemoveBotStars, settingSaveDeletedMessages:
+	case settingSelfStar, settingSelfStarWarning, settingMinimal, settingRemoveBotStars, settingSaveDeletedMessages:
 		t := ctx.S("settings.phrase.true")
 		f := ctx.S("settings.phrase.false")
 		arg = strings.ToLower(arg)

@@ -118,6 +118,103 @@ func (b *Bot) generateEmbed(msg *tables.Message, count int) (embed *discordgo.Me
 	return
 }
 
+func (b *Bot) getMessage(s *discordgo.Session, id, channel string) (msg *tables.Message, err error) {
+	key := "messages:" + id
+	data := b.Redis.HMGet(key, "author_id", "guild_id", "content", "image").Val()
+
+	if data[0] == nil {
+		m, err := s.ChannelMessage(channel, id)
+		if err != nil {
+			return nil, err
+		}
+
+		c, err := s.State.Channel(m.ChannelID)
+		if err != nil {
+			return nil, err
+		}
+
+		msg = &tables.Message{
+			ID:        id,
+			AuthorID:  m.Author.ID,
+			ChannelID: m.ChannelID,
+			GuildID:   c.GuildID,
+
+			Content: util.GetContent(m),
+			Image:   util.GetImage(m),
+		}
+
+		completeCount, err := b.countStars(msg, true)
+		if err != nil {
+			return nil, err
+		}
+
+		emoji := b.Settings.GetEmoji(m.GuildID, settingEmoji)
+		for _, r := range m.Reactions {
+			if r.Emoji.ID == "" {
+				if r.Emoji.Name != emoji.Unicode {
+					continue
+				}
+			} else if r.Emoji.ID != emoji.ID {
+				continue
+			}
+
+			if completeCount == r.Count {
+				break
+			}
+
+			_, err = b.PG.Model((*tables.Reaction)(nil)).Where("message_id = ?", m.ID).Delete()
+			if err != nil && err != pg.ErrNoRows {
+				return nil, err
+			}
+
+			after := ""
+			reactions := make([]tables.Reaction, 0)
+
+			for len(reactions) < r.Count {
+				users, err := s.MessageReactions(m.ChannelID, m.ID, r.Emoji.APIName(), 100, "", after)
+				if err != nil {
+					return nil, err
+				}
+
+				for _, u := range users {
+					reactions = append(reactions, tables.Reaction{
+						Bot:       u.Bot,
+						UserID:    u.ID,
+						MessageID: m.ID,
+					})
+				}
+
+				if len(users) != 0 {
+					after = users[len(users)-1].ID
+				}
+			}
+
+			if len(reactions) != 0 {
+				_, err = b.PG.Model(&reactions).OnConflict("DO NOTHING").Insert()
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			break
+		}
+
+		go b.cacheMessage(m)
+	} else {
+		msg = &tables.Message{
+			ID:        id,
+			AuthorID:  data[0].(string),
+			ChannelID: channel,
+			GuildID:   data[1].(string),
+
+			Content: data[2].(string),
+			Image:   data[3].(string),
+		}
+	}
+
+	return
+}
+
 func (b *Bot) cacheMessage(m *discordgo.Message) (err error) {
 	key := "messages:" + m.ID
 
@@ -137,99 +234,9 @@ func (b *Bot) cacheMessage(m *discordgo.Message) (err error) {
 }
 
 func (b *Bot) createMessage(s *discordgo.Session, id, channel, guild string) (err error) {
-	var msg *tables.Message
-
-	key := "messages:" + id
-	data := b.Redis.HMGet(key, "author_id", "guild_id", "content", "image").Val()
-
-	if data[0] == nil {
-		m, err := s.ChannelMessage(channel, id)
-		if err != nil {
-			return err
-		}
-
-		c, err := s.State.Channel(m.ChannelID)
-		if err != nil {
-			return err
-		}
-
-		msg = &tables.Message{
-			ID:        id,
-			AuthorID:  m.Author.ID,
-			ChannelID: m.ChannelID,
-			GuildID:   c.GuildID,
-
-			Content: util.GetContent(m),
-			Image:   util.GetImage(m),
-		}
-
-		completeCount, err := b.countStars(msg, true)
-		if err != nil {
-			return err
-		}
-
-		emoji := b.Settings.GetEmoji(m.GuildID, settingEmoji)
-		for _, r := range m.Reactions {
-			if r.Emoji.ID == "" {
-				if r.Emoji.Name != emoji.Unicode {
-					continue
-				}
-			} else if r.Emoji.ID != emoji.ID {
-				continue
-			}
-
-			if completeCount == r.Count {
-				break
-			}
-
-			_, err = b.PG.Model((*tables.Reaction)(nil)).Where("message_id = ?", m.ID).Delete()
-			if err != nil && err != pg.ErrNoRows {
-				return err
-			}
-
-			after := ""
-			reactions := make([]tables.Reaction, 0)
-
-			for len(reactions) < r.Count {
-				users, err := s.MessageReactions(m.ChannelID, m.ID, r.Emoji.APIName(), 100, "", after)
-				if err != nil {
-					return err
-				}
-
-				for _, u := range users {
-					reactions = append(reactions, tables.Reaction{
-						Bot:       u.Bot,
-						UserID:    u.ID,
-						MessageID: m.ID,
-					})
-				}
-
-				if len(users) != 0 {
-					after = users[len(users)-1].ID
-				}
-			}
-
-			if len(reactions) != 0 {
-				_, err = b.PG.Model(&reactions).OnConflict("DO NOTHING").Insert()
-				if err != nil {
-					return err
-				}
-			}
-
-			break
-		}
-
-		go b.cacheMessage(m)
-	} else {
-		msg = &tables.Message{
-			ID:        id,
-			AuthorID:  data[0].(string),
-			ChannelID: channel,
-			GuildID:   data[1].(string),
-
-			Content: data[2].(string),
-			Image:   data[3].(string),
-		}
+	msg, err := b.getMessage(s, id, channel)
+	if err != nil {
+		return
 	}
 
 	c, _ := b.PG.
