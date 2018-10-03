@@ -78,8 +78,8 @@ func (ctx *Context) Say(code string, values ...interface{}) (*discordgo.Message,
 }
 
 // SayList acts as an alias for ChannelMessageSend with List
-func (ctx *Context) SayList(code, value0 string, values ...string) (*discordgo.Message, error) {
-	return ctx.Say(code, value0, ctx.List(code, values...))
+func (ctx *Context) SayList(code, extraValue string, values ...string) (*discordgo.Message, error) {
+	return ctx.Say(code, extraValue, ctx.List(code, values...))
 }
 
 // Edit edit's a message using localization
