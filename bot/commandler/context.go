@@ -87,6 +87,12 @@ func (ctx *Context) Edit(m *discordgo.Message, code string, values ...interface{
 	return ctx.Session.ChannelMessageEdit(ctx.ChannelID, m.ID, ctx.S(code, values...))
 }
 
+// Channel returns this messages's channel
+func (ctx *Context) Channel() *discordgo.Channel {
+	c, _ := ctx.Session.State.Channel(ctx.ChannelID)
+	return c
+}
+
 // Guild returns this messages's guild
 func (ctx *Context) Guild() *discordgo.Guild {
 	g, _ := ctx.Session.State.Guild(ctx.GuildID)

@@ -283,7 +283,7 @@ func findDefaultChannel(key string, state *discordgo.State, guild *discordgo.Gui
 			continue
 		}
 
-		if key == "nsfw_channel" && !channel.NSFW {
+		if key == settingNSFWChannel && !channel.NSFW {
 			continue
 		}
 

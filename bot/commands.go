@@ -59,6 +59,13 @@ func (b *Bot) registerCommands(c *commandler.Commandler) {
 			GuildOnly: true,
 		},
 		{
+			Run:         b.runSetup,
+			Name:        "setup",
+			GuildOnly:   true,
+			ClientPerms: discordgo.PermissionManageChannels,
+			MemberPerms: discordgo.PermissionManageChannels,
+		},
+		{
 			Run:         b.runStats,
 			Name:        "stats",
 			ClientPerms: discordgo.PermissionEmbedLinks,
@@ -94,6 +101,18 @@ func (b *Bot) registerCommands(c *commandler.Commandler) {
 	}
 }
 
+func (b *Bot) runPing(ctx *commandler.Context) (err error) {
+	ms := time.Now().UnixNano()
+
+	sent, err := ctx.Say("commands.ping.phrases.pinging")
+	if err != nil {
+		return
+	}
+
+	_, err = ctx.Edit(sent, "commands.ping.phrases.done", (time.Now().UnixNano()-ms)/int64(time.Millisecond))
+	return
+}
+
 func (b *Bot) runHelp(ctx *commandler.Context) (err error) {
 	names := make([]string, 0)
 	for _, c := range ctx.Commandler.Commands {
@@ -126,19 +145,19 @@ func (b *Bot) runHelp(ctx *commandler.Context) (err error) {
 		sb.WriteString(ctx.S("commands." + name + ".description"))
 		sb.WriteByte('\n')
 
-		resource := asset.Translation("commands." + name + ".aliases")
-		if resource != nil {
-			sb.WriteString("- " + ctx.S("commands.help.phrase.aliases") + ": ")
+		// resource := asset.Translation("commands." + name + ".aliases")
+		// if resource != nil {
+		// 	sb.WriteString("- " + ctx.S("commands.help.phrase.aliases") + ": ")
 
-			aliases := resource.([]interface{})
-			strs := make([]string, len(aliases))
-			for i, alias := range aliases {
-				strs[i] = alias.(string)
-			}
+		// 	aliases := resource.([]interface{})
+		// 	strs := make([]string, len(aliases))
+		// 	for i, alias := range aliases {
+		// 		strs[i] = alias.(string)
+		// 	}
 
-			sb.WriteString(strings.Join(strs, ", "))
-			sb.WriteByte('\n')
-		}
+		// 	sb.WriteString(strings.Join(strs, ", "))
+		// 	sb.WriteByte('\n')
+		// }
 
 		sb.WriteByte('\n')
 	}
@@ -148,18 +167,6 @@ func (b *Bot) runHelp(ctx *commandler.Context) (err error) {
 		Description: sb.String(),
 		Title:       ctx.S("commands.help.phrase.commands"),
 	})
-	return
-}
-
-func (b *Bot) runPing(ctx *commandler.Context) (err error) {
-	ms := time.Now().UnixNano()
-
-	sent, err := ctx.Say("commands.ping.phrases.pinging")
-	if err != nil {
-		return
-	}
-
-	_, err = ctx.Edit(sent, "commands.ping.phrases.done", (time.Now().UnixNano()-ms)/int64(time.Millisecond))
 	return
 }
 
@@ -348,9 +355,65 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 	return
 }
 
+func (b *Bot) runSetup(ctx *commandler.Context) (err error) {
+	arg := strings.ToLower(strings.Join(ctx.Args, " "))
+	nsfw := strings.Contains(arg, "nsfw") || strings.Contains(arg, "true")
+
+	setting := settingChannel
+	if nsfw {
+		setting = settingNSFWChannel
+	}
+
+	starboard := b.Settings.GetString(ctx.GuildID, setting)
+	if starboard == settingNone {
+		if defCh := findDefaultChannel(setting, ctx.Session.State, ctx.Guild(), nil); defCh != nil {
+			starboard = defCh.ID
+		}
+	}
+
+	if starboard != settingNone {
+		ctx.Say("commands.setup.phrase.exists", "<#"+starboard+">")
+		return
+	}
+
+	name := "starboard"
+	if nsfw {
+		name += "-nsfw"
+	}
+
+	ch, err := ctx.Session.GuildChannelCreateComplex(ctx.GuildID, discordgo.GuildChannelCreateData{
+		Type:     discordgo.ChannelTypeGuildText,
+		Name:     name,
+		NSFW:     nsfw,
+		ParentID: ctx.Channel().ParentID,
+		PermissionOverwrites: []*discordgo.PermissionOverwrite{
+			{
+				ID:   ctx.GuildID,
+				Type: "role",
+				Deny: discordgo.PermissionSendMessages,
+			},
+		},
+	})
+	if err != nil {
+		return
+	}
+
+	b.Settings.Set(ctx.GuildID, setting, ch.ID)
+
+	ctx.Say("commands.setup.phrase.done", ch.Mention())
+	return
+}
+
 func (b *Bot) runStats(ctx *commandler.Context) (err error) {
-	messageCount, _ := b.PG.Model((*tables.Message)(nil)).Count()
-	starCount, _ := b.PG.Model((*tables.Reaction)(nil)).Count()
+	messageCount, err := b.PG.Model((*tables.Message)(nil)).Count()
+	if err != nil {
+		return
+	}
+
+	starCount, err := b.PG.Model((*tables.Reaction)(nil)).Count()
+	if err != nil {
+		return
+	}
 
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)

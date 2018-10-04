@@ -63,6 +63,12 @@
 	"commands.help.phrase.commands": "Commands",
 	"commands.help.phrase.aliases": "Aliases",
 
+	"commands.setup.name": "setup",
+	"commands.setup.usage": "[nsfw]",
+	"commands.setup.description": "Creates a starboard (optionally NSFW) channel with appropriate permissions.",
+	"commands.setup.phrase.exists": "A starboard channel already exists in %s.",
+	"commands.setup.phrase.done": "A starboard channel has been created in %s.",
+
 	"commands.fix.name": "fix",
 	"commands.fix.usage": "{message ID or message link}",
 	"commands.fix.description": "Fixes a messages star count.",
