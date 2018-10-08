@@ -57,10 +57,13 @@ func (ctx *Context) List(code string, values ...string) string {
 
 	for i, value := range values {
 		list += "``" + value + "``"
-		if i == len(values)-1 {
-			list += seperator
-		} else {
+
+		switch i {
+		case len(values) - 1:
+		case len(values) - 2:
 			list += ctx.S("list.or.finalSeperator")
+		default:
+			list += seperator
 		}
 	}
 
