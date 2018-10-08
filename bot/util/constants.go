@@ -11,6 +11,7 @@ import (
 var Languages = map[string]string{
 	"en-US": "American English",
 	"nl-NL": "Nederlands",
+	"de-DE": "Deutsch",
 }
 
 // LanguagesReversed is Languages with its keys and values flipped
