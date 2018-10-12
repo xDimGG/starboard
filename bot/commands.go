@@ -701,7 +701,7 @@ func (b *Bot) runLeaderboard(ctx *commandler.Context) (err error) {
 			return nil
 		}
 
-		offset = max - 1
+		offset = i - 1
 	}
 
 	extraWhere := ""
