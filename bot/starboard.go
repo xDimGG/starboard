@@ -120,7 +120,12 @@ func (b *Bot) generateEmbed(msg *tables.Message, count int) (embed *discordgo.Me
 
 func (b *Bot) getMessage(s *discordgo.Session, id, channel string) (msg *tables.Message, err error) {
 	key := "messages:" + id
-	data := b.Redis.HMGet(key, "author_id", "guild_id", "content", "image").Val()
+	res := b.Redis.HMGet(key, "author_id", "guild_id", "content", "image")
+	if res.Err() != nil {
+		return nil, res.Err()
+	}
+
+	data := res.Val()
 
 	if data[0] == nil {
 		m, err := s.ChannelMessage(channel, id)
