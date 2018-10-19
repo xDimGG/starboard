@@ -50,6 +50,11 @@ func (l *Locales) ReadAll() (err error) {
 		go func(file os.FileInfo) {
 			defer wg.Done()
 
+			ext := filepath.Ext(file.Name())
+			if ext != ".json" {
+				return
+			}
+
 			content, err := ioutil.ReadFile(filepath.Join(l.dir, file.Name()))
 			if err != nil {
 				final = err
@@ -66,7 +71,7 @@ func (l *Locales) ReadAll() (err error) {
 			}
 
 			l.Lock()
-			l.Assets[strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))] = a
+			l.Assets[strings.TrimSuffix(file.Name(), ext)] = a
 			l.Unlock()
 		}(file)
 	}

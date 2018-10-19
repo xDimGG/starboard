@@ -4,7 +4,7 @@
 	"list.or.prefix": "either ",
 	"list.or.double": "%s or %s",
 	"list.or.seperator": ", ",
-	"list.or.finalSeperator": ", or ",
+	"list.or.final_seperator": ", or ",
 
 	"message.content": "Content",
 	"message.author": "Author",

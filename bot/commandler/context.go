@@ -61,7 +61,7 @@ func (ctx *Context) List(code string, values ...string) string {
 		switch i {
 		case len(values) - 1:
 		case len(values) - 2:
-			list += ctx.S("list.or.finalSeperator")
+			list += ctx.S("list.or.final_seperator")
 		default:
 			list += seperator
 		}
