@@ -43,6 +43,8 @@ const (
 	settingNone = "none"
 )
 
+const starEmoji = "⭐"
+
 // Bot represents a starboard instance
 type Bot struct {
 	PG        *pg.DB
@@ -109,7 +111,7 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 		settingSelfStarWarning: false,
 		settingEmoji: &util.Emoji{
 			Name:    "star",
-			Unicode: "⭐",
+			Unicode: starEmoji,
 		},
 		settingChannel:               settingNone,
 		settingNSFWChannel:           settingNone,

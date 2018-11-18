@@ -372,13 +372,33 @@ func (b *Bot) runSetup(ctx *commandler.Context) (err error) {
 	}
 
 	if starboard != settingNone {
-		ctx.Say("commands.setup.phrase.exists", "<#"+starboard+">")
-		return
+		if _, err = ctx.Session.State.Channel(starboard); err == nil {
+			ctx.Say("commands.setup.phrase.exists", "<#"+starboard+">")
+			return
+		}
 	}
 
 	name := "starboard"
 	if nsfw {
 		name += "-nsfw"
+	}
+
+	if g := ctx.Guild(); g != nil {
+		var count int
+
+		for _, c := range g.Channels {
+			if c.Type != discordgo.ChannelTypeGuildText {
+				continue
+			}
+
+			if util.StartsWithEmoji(c.Name) {
+				count++
+			}
+		}
+
+		if count > len(g.Channels)/2 {
+			name = starEmoji + name
+		}
 	}
 
 	ch, err := ctx.Session.GuildChannelCreateComplex(ctx.GuildID, discordgo.GuildChannelCreateData{

@@ -195,6 +195,12 @@ func GetContent(m *discordgo.Message) (content string) {
 	return
 }
 
+// StartsWithEmoji checks whether the first character of a string contains an emoji
+func StartsWithEmoji(str string) bool {
+	_, ok := emojis[string([]rune(str)[0])]
+	return ok
+}
+
 const (
 	discordSnowflakeEpoch   = 1420070400000
 	snowflakeTimestampShift = 22
