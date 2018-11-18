@@ -18,6 +18,8 @@ type Context struct {
 	Prefix     string
 	Locale     func(string, ...interface{}) string
 	Language   string
+
+	guild *discordgo.Guild
 }
 
 var (
@@ -98,8 +100,11 @@ func (ctx *Context) Channel() *discordgo.Channel {
 
 // Guild returns this messages's guild
 func (ctx *Context) Guild() *discordgo.Guild {
-	g, _ := ctx.Session.State.Guild(ctx.GuildID)
-	return g
+	if ctx.guild == nil {
+		ctx.guild, _ = ctx.Session.State.Guild(ctx.GuildID)
+	}
+
+	return ctx.guild
 }
 
 // VoiceState returns this message author's voice state
