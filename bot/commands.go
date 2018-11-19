@@ -393,10 +393,12 @@ func (b *Bot) runSetup(ctx *commandler.Context) (err error) {
 
 			if util.StartsWithEmoji(c.Name) {
 				count++
+			} else {
+				count--
 			}
 		}
 
-		if count > len(g.Channels)/2 {
+		if count > 0 {
 			name = starEmoji + name
 		}
 	}
