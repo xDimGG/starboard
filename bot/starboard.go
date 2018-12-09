@@ -27,21 +27,21 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func (b *Bot) getStarboard(s *discordgo.Session, msg *tables.Message) (starboard string) {
+func (b *Bot) getStarboard(s *discordgo.Session, channelID, guildID string) (starboard string) {
 	setting := settingChannel
-	c, err := s.State.Channel(msg.ChannelID)
+	c, err := s.State.Channel(channelID)
 	if err != nil || c.NSFW {
 		setting = settingNSFWChannel
 	}
 
-	starboard = b.Settings.GetString(msg.GuildID, setting)
+	starboard = b.Settings.GetString(guildID, setting)
 	if starboard == settingNone {
-		g, err := s.State.Guild(msg.GuildID)
+		g, err := s.State.Guild(guildID)
 		if err != nil {
 			return
 		}
 
-		ch := findDefaultChannel(setting, s.State, g, c)
+		ch := findDefaultChannel(setting, s.State, g)
 		if ch == nil {
 			return
 		}
@@ -263,7 +263,7 @@ func (b *Bot) createMessage(s *discordgo.Session, id, channel, guild string) (er
 		}
 	}
 
-	starboard := b.getStarboard(s, msg)
+	starboard := b.getStarboard(s, msg.ChannelID, msg.GuildID)
 	if starboard == settingNone {
 		return
 	}
@@ -327,7 +327,7 @@ func (b *Bot) updateMessage(s *discordgo.Session, id, channel, guild string) (er
 		return
 	}
 
-	starboard := b.getStarboard(s, msg)
+	starboard := b.getStarboard(s, msg.ChannelID, msg.GuildID)
 	if starboard == settingNone {
 		return
 	}

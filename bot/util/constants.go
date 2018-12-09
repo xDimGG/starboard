@@ -25,7 +25,8 @@ func init() {
 
 var reCustomEmoji = regexp.MustCompile(`<(a)?:(\w{2,32}):(\d{17,19})>`)
 
-var permissions = map[int]string{
+// Permissions represents Discord permissions mapped by their bit value to their identifier
+var Permissions = map[int]string{
 	discordgo.PermissionCreateInstantInvite: "CREATE_INSTANT_INVITE",
 	discordgo.PermissionKickMembers:         "KICK_MEMBERS",
 	discordgo.PermissionBanMembers:          "BAN_MEMBERS",

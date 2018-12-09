@@ -96,6 +96,11 @@ func (b *Bot) registerCommands(c *commandler.Commandler) {
 			GuildOnly:   true,
 			ClientPerms: discordgo.PermissionEmbedLinks,
 		},
+		{
+			Run:       b.runTroubleshoot,
+			Name:      "troubleshoot",
+			GuildOnly: true,
+		},
 	} {
 		c.AddCommand(cmd)
 	}
@@ -175,7 +180,7 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 		content := ""
 		for k, v := range b.Settings.GetID(ctx.GuildID) {
 			if strings.Contains(k, "channel") && v == settingNone {
-				if ch := findDefaultChannel(k, ctx.Session.State, ctx.Guild(), nil); ch != nil {
+				if ch := findDefaultChannel(k, ctx.Session.State, ctx.Guild()); ch != nil {
 					v = ch.ID
 				}
 			}
@@ -196,7 +201,7 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 		str := getSettingString(key, b.Settings.Get(ctx.GuildID, key))
 
 		if strings.Contains(key, settingChannel) && str == settingNone {
-			if ch := findDefaultChannel(key, ctx.Session.State, ctx.Guild(), nil); ch != nil {
+			if ch := findDefaultChannel(key, ctx.Session.State, ctx.Guild()); ch != nil {
 				str = "<#" + ch.ID + ">"
 			}
 		}
@@ -357,7 +362,7 @@ func (b *Bot) runConfig(ctx *commandler.Context) (err error) {
 
 func (b *Bot) runSetup(ctx *commandler.Context) (err error) {
 	arg := strings.ToLower(strings.Join(ctx.Args, " "))
-	nsfw := strings.Contains(arg, "nsfw") || strings.Contains(arg, "true")
+	nsfw := strings.Contains(arg, ctx.S("commands.setup.nsfw"))
 
 	setting := settingChannel
 	if nsfw {
@@ -366,7 +371,7 @@ func (b *Bot) runSetup(ctx *commandler.Context) (err error) {
 
 	starboard := b.Settings.GetString(ctx.GuildID, setting)
 	if starboard == settingNone {
-		if defCh := findDefaultChannel(setting, ctx.Session.State, ctx.Guild(), nil); defCh != nil {
+		if defCh := findDefaultChannel(setting, ctx.Session.State, ctx.Guild()); defCh != nil {
 			starboard = defCh.ID
 		}
 	}
@@ -782,5 +787,114 @@ func (b *Bot) runLeaderboard(ctx *commandler.Context) (err error) {
 	}
 
 	_, err = ctx.Session.ChannelMessageSendEmbed(ctx.ChannelID, embed)
+	return
+}
+
+func (b *Bot) runTroubleshoot(ctx *commandler.Context) (err error) {
+	var errors, warnings []string
+
+	channelData := []string{settingChannel, settingNSFWChannel}
+
+	for i, key := range channelData {
+		channel := b.Settings.GetString(ctx.GuildID, key)
+
+		if channel == settingNone {
+			if def := findDefaultChannel(key, ctx.Session.State, ctx.Guild()); def != nil {
+				channel = def.ID
+			}
+		} else if _, err := ctx.Session.State.Channel(channel); err != nil {
+			channel = settingNone
+		}
+
+		channelData[i] = channel
+	}
+
+	channel := channelData[0]
+	nsfwChannel := channelData[1]
+
+	if channel == settingNone && nsfwChannel == settingNone {
+		errors = append(errors, ctx.S("commands.troubleshoot.missing_channel", ctx.Prefix, ctx.S("commands.setup.name")))
+	} else {
+		var nsfwChannels, channels int
+
+		for _, c := range ctx.Guild().Channels {
+			if c.Type == discordgo.ChannelTypeGuildText {
+				if c.NSFW {
+					nsfwChannels++
+				} else {
+					channels++
+				}
+			}
+		}
+
+		if channels != 0 && channel == settingNone {
+			warnings = append(warnings, ctx.S("commands.troubleshoot.missing_channel", ctx.Prefix, ctx.S("commands.setup.name")))
+		}
+
+		if nsfwChannels != 0 && nsfwChannel == settingNone {
+			args := []interface{}{nsfwChannels, ctx.Prefix, ctx.S("commands.setup.name"), ctx.S("commands.setup.nsfw")}
+			if nsfwChannels == 1 {
+				warnings = append(warnings, ctx.S("commands.troubleshoot.missing_nsfw_channel", args...))
+			} else {
+				warnings = append(warnings, ctx.S("commands.troubleshoot.missing_nsfw_channel_multiple", args...))
+			}
+		}
+	}
+
+	for _, id := range []string{channel, nsfwChannel} {
+		if id == settingNone {
+			continue
+		}
+
+		perms, err := ctx.Session.State.UserChannelPermissions(ctx.Session.State.User.ID, id)
+		if err != nil {
+			continue
+		}
+
+		mention := "<#" + id + ">"
+
+		for _, perm := range []int{
+			discordgo.PermissionSendMessages,
+			discordgo.PermissionEmbedLinks,
+			discordgo.PermissionReadMessages,
+		} {
+			if perms&perm != perm {
+				errors = append(errors, ctx.S("commands.troubleshoot.missing_permissions", ctx.S("permissions."+util.Permissions[perm]), mention))
+			}
+		}
+	}
+
+	if len(errors) == 0 && len(warnings) == 0 {
+		ctx.Say("commands.troubleshoot.passed", ctx.Prefix, ctx.S("commands.invite.name"))
+	} else {
+		var final strings.Builder
+
+		if len(errors) != 0 {
+			final.WriteString(ctx.S("commands.troubleshoot.errors"))
+			final.WriteByte('\n')
+
+			for _, e := range errors {
+				final.WriteString(e)
+				final.WriteByte('\n')
+			}
+
+			final.WriteByte('\n')
+		}
+
+		if len(warnings) != 0 {
+			final.WriteString(ctx.S("commands.troubleshoot.warnings"))
+			final.WriteByte('\n')
+
+			for _, warn := range warnings {
+				final.WriteString(warn)
+				final.WriteByte('\n')
+			}
+
+			final.WriteByte('\n')
+		}
+
+		ctx.SayRaw(final.String())
+	}
+
 	return
 }

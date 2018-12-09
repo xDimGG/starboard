@@ -120,7 +120,7 @@ func GetMissing(have, want int, l func(string, ...interface{}) string) string {
 	missing := want &^ have
 	perms := "```diff\n"
 
-	for flag, permission := range permissions {
+	for flag, permission := range Permissions {
 		if missing&flag == flag {
 			perms += "- " + l("permissions."+permission) + "\n"
 		}

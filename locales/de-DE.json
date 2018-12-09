@@ -60,6 +60,7 @@
 
 	"commands.setup.name": "Einrichtung",
 	"commands.setup.usage": "[nsfw]",
+	"commands.setup.nsfw": "nsfw",
 	"commands.setup.description": "Erstellt einen Sternbrettkanal (optional NSFW) mit den entsprechenden Berechtigungen.",
 	"commands.setup.phrase.exists": "Es gibt bereits einen Sternbrettkanal in %s.",
 	"commands.setup.phrase.done": "Ein Sternbrettkanal wurde in %s erstellt.",

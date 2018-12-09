@@ -194,7 +194,7 @@ func (b *Bot) messageDelete(s *discordgo.Session, m *discordgo.MessageDelete) {
 		return
 	}
 
-	starboard := b.getStarboard(s, msg)
+	starboard := b.getStarboard(s, msg.ChannelID, msg.GuildID)
 	if starboard == settingNone {
 		return
 	}
@@ -232,7 +232,7 @@ func (b *Bot) messageDeleteBulk(s *discordgo.Session, m *discordgo.MessageDelete
 		GuildID:   m.GuildID,
 	}
 
-	starboard := b.getStarboard(s, msg)
+	starboard := b.getStarboard(s, msg.ChannelID, msg.GuildID)
 	if starboard == settingNone {
 		return
 	}
@@ -365,7 +365,7 @@ func (b *Bot) messageReactionRemoveAll(s *discordgo.Session, m *discordgo.Messag
 		return
 	}
 
-	starboard := b.getStarboard(s, msg)
+	starboard := b.getStarboard(s, msg.ChannelID, msg.GuildID)
 	if starboard == settingNone {
 		return
 	}

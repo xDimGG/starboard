@@ -244,20 +244,20 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 
 		stat = newStat
 
+		data, err := json.Marshal(stat)
+		if err != nil {
+			b.Sentry.CaptureError(err, nil)
+			continue
+		}
+
 		for _, site := range b.opts.Lists {
 			if site.Key == "" {
 				continue
 			}
 
-			data, err := json.Marshal(stat)
-			if err != nil {
-				b.Sentry.CaptureError(err, map[string]string{"key": site.Key, "url": site.URL})
-				continue
-			}
-
 			req, err := http.NewRequest("POST", strings.Replace(site.URL, ":id", b.Manager.Sessions[0].State.User.ID, 1), bytes.NewReader(data))
 			if err != nil {
-				b.Sentry.CaptureError(err, map[string]string{"key": site.Key, "url": site.URL})
+				b.Sentry.CaptureError(err, map[string]string{"url": site.URL})
 				continue
 			}
 
@@ -270,7 +270,7 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 			}
 
 			if err != nil {
-				b.Sentry.CaptureError(err, map[string]string{"key": site.Key, "url": site.URL})
+				b.Sentry.CaptureError(err, map[string]string{"url": site.URL})
 			}
 		}
 	}
@@ -279,31 +279,21 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 	return
 }
 
-func findDefaultChannel(key string, state *discordgo.State, guild *discordgo.Guild, current *discordgo.Channel) (ch *discordgo.Channel) {
+func findDefaultChannel(key string, state *discordgo.State, guild *discordgo.Guild) *discordgo.Channel {
 	for _, channel := range guild.Channels {
-		if channel.Type != discordgo.ChannelTypeGuildText {
-			continue
-		}
-
-		if key == settingNSFWChannel && !channel.NSFW {
-			continue
-		}
-
-		if current != nil && ((current.NSFW && !channel.NSFW) || current == channel) {
-			continue
-		}
-
-		if !strings.Contains(channel.Name, "starboard") {
-			continue
-		}
-
-		perms, err := state.UserChannelPermissions(state.User.ID, channel.ID)
-		if err == nil && perms&discordgo.PermissionSendMessages == discordgo.PermissionSendMessages {
-			return channel
+		switch {
+		case channel.Type != discordgo.ChannelTypeGuildText,
+			key == settingNSFWChannel && !channel.NSFW,
+			!strings.Contains(channel.Name, "starboard"):
+		default:
+			perms, err := state.UserChannelPermissions(state.User.ID, channel.ID)
+			if err == nil && perms&discordgo.PermissionSendMessages == discordgo.PermissionSendMessages {
+				return channel
+			}
 		}
 	}
 
-	return
+	return nil
 }
 
 func getSettingString(key string, value interface{}) string {

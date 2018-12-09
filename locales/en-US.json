@@ -65,9 +65,10 @@
 
 	"commands.setup.name": "setup",
 	"commands.setup.usage": "[nsfw]",
-	"commands.setup.description": "Creates a starboard (optionally NSFW) channel with appropriate permissions.",
-	"commands.setup.phrase.exists": "A starboard channel already exists in %s.",
-	"commands.setup.phrase.done": "A starboard channel has been created in %s.",
+	"commands.setup.nsfw": "nsfw",
+	"commands.setup.description": "Creates a Starboard (optionally NSFW) channel with appropriate permissions.",
+	"commands.setup.phrase.exists": "A Starboard channel already exists in %s.",
+	"commands.setup.phrase.done": "A Starboard channel has been created in %s.",
 
 	"commands.fix.name": "fix",
 	"commands.fix.usage": "{message ID or message link}",
@@ -119,6 +120,17 @@
 	"commands.config.usage": "[setting] [new-value]",
 	"commands.config.description": "Changes or shows server-wide settings.",
 	"commands.config.aliases": ["setting", "settings"],
+
+	"commands.troubleshoot.name": "troubleshoot",
+	"commands.troubleshoot.description": "Runs a config audit that checks for common errors.",
+	"commands.troubleshoot.aliases": ["audit"],
+	"commands.troubleshoot.errors": "__Errors__",
+	"commands.troubleshoot.warnings": "__Warnings__",
+	"commands.troubleshoot.missing_channel": "This server has no Starboard channel. You can run `%s%s` to fix this.",
+	"commands.troubleshoot.missing_nsfw_channel": "This server has %d NSFW channel but no NSFW starboard. You can run `%s%s %s` to fix this.",
+	"commands.troubleshoot.missing_nsfw_channel_multiple": "This server has %d NSFW channels but no NSFW starboard. You can run `%s%s %s` to fix this.",
+	"commands.troubleshoot.missing_permissions": "I am missing the `%s` permission for %s.",
+	"commands.troubleshoot.passed": "All tests have passed. If you're still having issues, you should join my support server which can be found with `%s%s`.",
 
 	"settings.restrictions.max_length": "%s can't be longer than %d characters.",
 	"settings.restrictions.one_of": "%s must be %s.",
