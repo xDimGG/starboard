@@ -263,7 +263,7 @@ func (b *Bot) messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReact
 	}
 
 	member, err := s.State.Member(m.GuildID, m.UserID)
-	perms, _ := s.State.UserChannelPermissions(m.UserID, m.ChannelID)
+	perms, _ := s.State.UserChannelPermissions(s.State.User.ID, m.ChannelID)
 	bot := false
 
 	if m.UserID != s.State.User.ID {
