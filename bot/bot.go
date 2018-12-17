@@ -311,7 +311,7 @@ func (b *Bot) reportError(err error, tags map[string]string) {
 	}
 
 	if b.prod() {
-		b.reportError(err, tags)
+		b.Sentry.CaptureError(err, tags)
 		return
 	}
 
