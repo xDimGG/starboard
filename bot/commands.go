@@ -743,7 +743,7 @@ func (b *Bot) runLeaderboard(ctx *commandler.Context) (err error) {
 		}
 	}
 
-	var data [pageSize]struct {
+	var data []struct {
 		AuthorID   string
 		TotalStars int
 	}
