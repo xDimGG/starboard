@@ -2,11 +2,11 @@ package bot
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -59,41 +59,40 @@ type Bot struct {
 	opts           *Options
 }
 
-// Lists represents bot lists
-type Lists []struct{ Key, URL string }
+// DiscordList represents a Discord Bot list
+type DiscordList struct {
+	Authorization string
+	URL           func(id string) string
+	Serialize     func(shardCount, guildCount int) ([]byte, error)
+}
 
 // Options represents the options for creating a starboard instance
 type Options struct {
-	Prefix    string
-	Token     string
-	Locales   string
-	OwnerID   string
-	Mode      string
-	SentryDSN string
-	Lists     Lists
+	Prefix       string
+	Token        string
+	Locales      string
+	OwnerID      string
+	Mode         string
+	SentryDSN    string
+	DiscordLists []DiscordList
 
 	Guild            string
 	GuildLogChannel  string
 	MemberLogChannel string
 }
 
-type stats struct {
-	ServerCount int `json:"server_count"`
-	ShardCount  int `json:"shard_count"`
-}
-
 // New creates a starboard instance
-func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err error) {
+func New(opts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err error) {
 	b := &Bot{
 		PG:        pg.Connect(pgOpts),
 		Redis:     redis.NewClient(redisOpts),
 		StartTime: time.Now(),
 
 		expectedGuilds: make(map[*discordgo.Session]int),
-		opts:           botOpts,
+		opts:           opts,
 	}
 
-	b.Sentry, err = raven.New(botOpts.SentryDSN)
+	b.Sentry, err = raven.New(opts.SentryDSN)
 	if err != nil {
 		return
 	}
@@ -153,45 +152,52 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 		}
 
 		s.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
+			tags := map[string]string{"event": "MESSAGE_CREATE"}
 			b.Sentry.CapturePanic(func() {
-				b.messageCreate(s, m)
-			}, nil)
+				b.reportError(b.messageCreate(s, m), tags)
+			}, tags)
 		})
 
 		s.AddHandler(func(s *discordgo.Session, m *discordgo.MessageUpdate) {
+			tags := map[string]string{"event": "MESSAGE_UPDATE"}
 			b.Sentry.CapturePanic(func() {
-				b.messageUpdate(s, m)
-			}, nil)
+				b.reportError(b.messageUpdate(s, m), tags)
+			}, tags)
 		})
 
 		s.AddHandler(func(s *discordgo.Session, m *discordgo.MessageDelete) {
+			tags := map[string]string{"event": "MESSAGE_DELETE"}
 			b.Sentry.CapturePanic(func() {
-				b.messageDelete(s, m)
-			}, nil)
+				b.reportError(b.messageDelete(s, m), tags)
+			}, tags)
 		})
 
 		s.AddHandler(func(s *discordgo.Session, m *discordgo.MessageDeleteBulk) {
+			tags := map[string]string{"event": "MESSAGE_DELETE_BULK"}
 			b.Sentry.CapturePanic(func() {
-				b.messageDeleteBulk(s, m)
-			}, nil)
+				b.reportError(b.messageDeleteBulk(s, m), tags)
+			}, tags)
 		})
 
 		s.AddHandler(func(s *discordgo.Session, m *discordgo.MessageReactionAdd) {
+			tags := map[string]string{"event": "MESSAGE_REACTION_ADD"}
 			b.Sentry.CapturePanic(func() {
-				b.messageReactionAdd(s, m)
-			}, nil)
+				b.reportError(b.messageReactionAdd(s, m), tags)
+			}, tags)
 		})
 
 		s.AddHandler(func(s *discordgo.Session, m *discordgo.MessageReactionRemove) {
+			tags := map[string]string{"event": "MESSAGE_REACTION_REMOVE"}
 			b.Sentry.CapturePanic(func() {
-				b.messageReactionRemove(s, m)
-			}, nil)
+				b.reportError(b.messageReactionRemove(s, m), tags)
+			}, tags)
 		})
 
 		s.AddHandler(func(s *discordgo.Session, m *discordgo.MessageReactionRemoveAll) {
+			tags := map[string]string{"event": "MESSAGE_REACTION_REMOVE_ALL"}
 			b.Sentry.CapturePanic(func() {
-				b.messageReactionRemoveAll(s, m)
-			}, nil)
+				b.reportError(b.messageReactionRemoveAll(s, m), tags)
+			}, tags)
 		})
 
 		c := commandler.New(s, b.Locales, b.Settings)
@@ -200,7 +206,7 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 
 		if b.prod() {
 			c.SetOnError(func(ctx *commandler.Context, err error, panicked bool) {
-				b.Sentry.CaptureError(err, map[string]string{
+				b.reportError(err, map[string]string{
 					"command":  ctx.Command.Name,
 					"args":     strings.Join(ctx.Args, " "),
 					"panicked": strconv.FormatBool(panicked),
@@ -225,43 +231,48 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 		return
 	}
 
-	ticker := time.NewTicker(time.Minute)
-	stat := &stats{}
+	b.initStatPoster(time.Minute)
+	return
+}
 
-	for range ticker.C {
-		newStat := &stats{
-			ServerCount: 0,
-			ShardCount:  len(b.Manager.Sessions),
-		}
+func (b *Bot) initStatPoster(d time.Duration) {
+	var shardCount, guildCount int
+
+	for range time.NewTicker(d).C {
+		newShardCount := len(b.Manager.Sessions)
+		newGuildCount := 0
 
 		for _, s := range b.Manager.Sessions {
-			newStat.ServerCount += len(s.State.Guilds)
+			newGuildCount += len(s.State.Guilds)
 		}
 
-		if stat.ServerCount == newStat.ServerCount && stat.ShardCount == newStat.ShardCount {
+		if shardCount == newShardCount && guildCount == newGuildCount {
 			continue
 		}
 
-		stat = newStat
+		shardCount = newShardCount
+		guildCount = newGuildCount
 
-		data, err := json.Marshal(stat)
-		if err != nil {
-			b.Sentry.CaptureError(err, nil)
-			continue
-		}
-
-		for _, site := range b.opts.Lists {
-			if site.Key == "" {
+		for _, list := range b.opts.DiscordLists {
+			if list.Authorization == "" {
 				continue
 			}
 
-			req, err := http.NewRequest("POST", strings.Replace(site.URL, ":id", b.Manager.Sessions[0].State.User.ID, 1), bytes.NewReader(data))
+			url := list.URL(b.Manager.Sessions[0].State.User.ID)
+
+			data, err := list.Serialize(shardCount, guildCount)
 			if err != nil {
-				b.Sentry.CaptureError(err, map[string]string{"url": site.URL})
+				b.reportError(err, map[string]string{"url": url})
 				continue
 			}
 
-			req.Header.Set("Authorization", site.Key)
+			req, err := http.NewRequest("POST", url, bytes.NewReader(data))
+			if err != nil {
+				b.reportError(err, map[string]string{"url": url})
+				continue
+			}
+
+			req.Header.Set("Authorization", list.Authorization)
 			req.Header.Set("Content-Type", "application/json")
 
 			resp, err := http.DefaultClient.Do(req)
@@ -270,52 +281,14 @@ func New(botOpts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err er
 			}
 
 			if err != nil {
-				b.Sentry.CaptureError(err, map[string]string{"url": site.URL})
+				b.reportError(err, map[string]string{"url": url})
 			}
 		}
 	}
-
-	// <-make(chan struct{})
-	return
 }
 
-func findDefaultChannel(key string, state *discordgo.State, guild *discordgo.Guild) *discordgo.Channel {
-	for _, channel := range guild.Channels {
-		switch {
-		case channel.Type != discordgo.ChannelTypeGuildText,
-			key == settingNSFWChannel && !channel.NSFW,
-			!strings.Contains(channel.Name, "starboard"):
-		default:
-			perms, err := state.UserChannelPermissions(state.User.ID, channel.ID)
-			if err == nil && perms&discordgo.PermissionSendMessages == discordgo.PermissionSendMessages {
-				return channel
-			}
-		}
-	}
-
-	return nil
-}
-
-func getSettingString(key string, value interface{}) string {
-	if strings.Contains(key, settingChannel) && value != settingNone {
-		if str, ok := value.(string); ok {
-			value = "<#" + str + ">"
-		}
-	}
-
-	if key == settingLanguage {
-		value = util.Languages[value.(string)]
-	}
-
-	if key == settingRandomStarProbability {
-		return strconv.FormatFloat(value.(float64), 'f', -1, 64) + "%"
-	}
-
-	return fmt.Sprintf("%v", value)
-}
-
-func (b *Bot) createTables(ts ...interface{}) (err error) {
-	for _, t := range ts {
+func (b *Bot) createTables(tables ...interface{}) (err error) {
+	for _, t := range tables {
 		if b.dev() {
 			err = b.PG.DropTable(t, &orm.DropTableOptions{IfExists: true})
 			if err != nil {
@@ -330,6 +303,45 @@ func (b *Bot) createTables(ts ...interface{}) (err error) {
 	}
 
 	return
+}
+
+func (b *Bot) reportError(err error, tags map[string]string) {
+	if err == nil {
+		return
+	}
+
+	if b.prod() {
+		b.reportError(err, tags)
+		return
+	}
+
+	fmt.Printf("Reported error: %v\n", err)
+
+	var names []string
+	for name := range tags {
+		names = append(names, name)
+	}
+
+	sort.Strings(names)
+
+	for _, name := range names {
+		fmt.Printf("%v: %v\n", name, tags[name])
+	}
+}
+
+func (b *Bot) capturePanic(f func(), tags map[string]string) {
+	defer func() {
+		switch err := recover().(type) {
+		case nil:
+			return
+		case error:
+			b.reportError(err, tags)
+		default:
+			b.reportError(fmt.Errorf("%v", err), tags)
+		}
+	}()
+
+	f()
 }
 
 func (b *Bot) dev() bool {

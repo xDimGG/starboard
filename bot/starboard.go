@@ -14,9 +14,9 @@ import (
 )
 
 const expiryTime = time.Minute * 20
-const gray = 0x2e3036
+const gray = 0x2E3036
 
-var styles = []struct{ max, color int }{
+var styles = [...]struct{ max, color int }{
 	{100, 0x6F29CE},
 	{50, 0xFFB549},
 	{10, 0xFFB13F},

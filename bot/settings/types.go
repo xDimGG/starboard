@@ -1,8 +1,7 @@
 package settings
 
 import (
-	"errors"
-	"reflect"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -37,7 +36,7 @@ func serialize(v interface{}) string {
 		return str + "," + e.ID + "," + e.Name + "," + e.Unicode
 
 	default:
-		panic(errors.New("Unhandled type: " + reflect.TypeOf(v).Name()))
+		panic(fmt.Errorf("Unhandled type: %T", v))
 	}
 }
 

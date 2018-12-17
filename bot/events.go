@@ -86,14 +86,13 @@ func (b *Bot) guildMemberRemove(s *discordgo.Session, m *discordgo.GuildMemberRe
 	})
 }
 
-func (b *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func (b *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
 	if m.GuildID == "" {
 		return
 	}
 
-	err := b.cacheMessage(m.Message)
-	if err != nil {
-		b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_CREATE"})
+	if err := b.cacheMessage(m.Message); err != nil {
+		b.reportError(err, map[string]string{"event": "MESSAGE_CREATE"})
 	}
 
 	probability := b.Settings.Get(m.GuildID, settingRandomStarProbability).(float64)
@@ -102,7 +101,8 @@ func (b *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if rand.Float64() <= (probability / 100) {
-		perms, err := s.State.UserChannelPermissions(s.State.User.ID, m.ChannelID)
+		var perms int
+		perms, err = s.State.UserChannelPermissions(s.State.User.ID, m.ChannelID)
 		if err != nil || perms&discordgo.PermissionAddReactions != discordgo.PermissionAddReactions {
 			return
 		}
@@ -112,9 +112,11 @@ func (b *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 	}
+
+	return
 }
 
-func (b *Bot) messageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
+func (b *Bot) messageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) (err error) {
 	if m.GuildID == "" {
 		return
 	}
@@ -122,8 +124,6 @@ func (b *Bot) messageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 	key := "messages:" + m.ID
 
 	if b.Redis.Exists(key).Val() == 1 {
-		var err error
-
 		if m.EditedTimestamp != "" {
 			err = b.Redis.HMSet(key, map[string]interface{}{
 				"content": util.GetContent(m.Message),
@@ -136,18 +136,14 @@ func (b *Bot) messageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 		}
 
 		if err != nil {
-			b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_UPDATE"})
 			return
 		}
 
 		err = b.Redis.Expire(key, expiryTime).Err()
 		if err != nil {
-			b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_UPDATE"})
 			return
 		}
 	}
-
-	var err error
 
 	image := util.GetImage(m.Message)
 
@@ -165,18 +161,18 @@ func (b *Bot) messageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 
 	_, err = q.Update()
 	if err != nil {
-		b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_UPDATE"})
 		return
 	}
 
 	err = b.updateMessage(s, m.ID, m.ChannelID, m.GuildID)
 	if err != nil {
-		b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_UPDATE"})
 		return
 	}
+
+	return
 }
 
-func (b *Bot) messageDelete(s *discordgo.Session, m *discordgo.MessageDelete) {
+func (b *Bot) messageDelete(s *discordgo.Session, m *discordgo.MessageDelete) (err error) {
 	if m.GuildID == "" {
 		return
 	}
@@ -186,10 +182,10 @@ func (b *Bot) messageDelete(s *discordgo.Session, m *discordgo.MessageDelete) {
 	}
 
 	msg := &tables.Message{ID: m.ID}
-	err := b.PG.Select(msg)
+	err = b.PG.Select(msg)
 	if err != nil {
-		if err != pg.ErrNoRows {
-			b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_UPDATE"})
+		if err == pg.ErrNoRows {
+			return nil
 		}
 		return
 	}
@@ -201,9 +197,11 @@ func (b *Bot) messageDelete(s *discordgo.Session, m *discordgo.MessageDelete) {
 
 	go s.ChannelMessageDelete(starboard, msg.SentID)
 	go b.PG.Delete(msg)
+
+	return
 }
 
-func (b *Bot) messageDeleteBulk(s *discordgo.Session, m *discordgo.MessageDeleteBulk) {
+func (b *Bot) messageDeleteBulk(s *discordgo.Session, m *discordgo.MessageDeleteBulk) (err error) {
 	if m.GuildID == "" {
 		return
 	}
@@ -219,10 +217,10 @@ func (b *Bot) messageDeleteBulk(s *discordgo.Session, m *discordgo.MessageDelete
 	}
 
 	var rows []tables.Message
-	err := b.PG.Model(&rows).WhereIn("id IN (?)", args...).Returning("sent_id").Select()
+	err = b.PG.Model(&rows).WhereIn("id IN (?)", args...).Returning("sent_id").Select()
 	if err != nil {
-		if err != pg.ErrNoRows {
-			b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_UPDATE"})
+		if err == pg.ErrNoRows {
+			return nil
 		}
 		return
 	}
@@ -245,9 +243,11 @@ func (b *Bot) messageDeleteBulk(s *discordgo.Session, m *discordgo.MessageDelete
 
 	go s.ChannelMessagesBulkDelete(starboard, messages)
 	go b.PG.Model((*tables.Message)(nil)).WhereIn("id IN (?)", args...).Delete()
+
+	return
 }
 
-func (b *Bot) messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReactionAdd) {
+func (b *Bot) messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReactionAdd) (err error) {
 	if m.GuildID == "" {
 		return
 	}
@@ -280,8 +280,7 @@ func (b *Bot) messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReact
 		} else if mm && !b.Settings.GetBool(m.GuildID, settingSelfStar) {
 			msg, err := b.getMessage(s, m.MessageID, m.ChannelID)
 			if err != nil {
-				b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_REACTION_ADD"})
-				return
+				return err
 			}
 
 			if msg.AuthorID == m.UserID {
@@ -305,18 +304,13 @@ func (b *Bot) messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReact
 		MessageID: m.MessageID,
 	}).OnConflict("DO NOTHING").Insert()
 	if err != nil {
-		b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_REACTION_ADD"})
 		return
 	}
 
-	err = b.updateMessage(s, m.MessageID, m.ChannelID, m.GuildID)
-	if err != nil {
-		b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_REACTION_ADD"})
-		return
-	}
+	return b.updateMessage(s, m.MessageID, m.ChannelID, m.GuildID)
 }
 
-func (b *Bot) messageReactionRemove(s *discordgo.Session, m *discordgo.MessageReactionRemove) {
+func (b *Bot) messageReactionRemove(s *discordgo.Session, m *discordgo.MessageReactionRemove) (err error) {
 	if m.GuildID == "" {
 		return
 	}
@@ -331,12 +325,11 @@ func (b *Bot) messageReactionRemove(s *discordgo.Session, m *discordgo.MessageRe
 		return
 	}
 
-	err := b.PG.Delete(&tables.Reaction{
+	err = b.PG.Delete(&tables.Reaction{
 		UserID:    m.UserID,
 		MessageID: m.MessageID,
 	})
 	if err != nil && err != pg.ErrNoRows {
-		b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_REACTION_REMOVE"})
 		return
 	}
 
@@ -345,22 +338,22 @@ func (b *Bot) messageReactionRemove(s *discordgo.Session, m *discordgo.MessageRe
 		if e, ok := err.(pg.Error); ok && e.IntegrityViolation() {
 			return
 		}
-
-		b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_REACTION_REMOVE"})
 		return
 	}
+
+	return
 }
 
-func (b *Bot) messageReactionRemoveAll(s *discordgo.Session, m *discordgo.MessageReactionRemoveAll) {
+func (b *Bot) messageReactionRemoveAll(s *discordgo.Session, m *discordgo.MessageReactionRemoveAll) (err error) {
 	if m.GuildID == "" {
 		return
 	}
 
 	msg := &tables.Message{ID: m.MessageID}
-	err := b.PG.Select(msg)
+	err = b.PG.Select(msg)
 	if err != nil {
-		if err != pg.ErrNoRows {
-			b.Sentry.CaptureError(err, map[string]string{"event": "MESSAGE_UPDATE"})
+		if err == pg.ErrNoRows {
+			return nil
 		}
 		return
 	}
@@ -372,4 +365,6 @@ func (b *Bot) messageReactionRemoveAll(s *discordgo.Session, m *discordgo.Messag
 
 	go s.ChannelMessageDelete(starboard, msg.SentID)
 	go b.PG.Delete(msg)
+
+	return
 }

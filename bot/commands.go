@@ -743,7 +743,7 @@ func (b *Bot) runLeaderboard(ctx *commandler.Context) (err error) {
 		}
 	}
 
-	var data []struct {
+	var data [pageSize]struct {
 		AuthorID   string
 		TotalStars int
 	}
@@ -793,7 +793,7 @@ func (b *Bot) runLeaderboard(ctx *commandler.Context) (err error) {
 func (b *Bot) runTroubleshoot(ctx *commandler.Context) (err error) {
 	var errors, warnings []string
 
-	channelData := []string{settingChannel, settingNSFWChannel}
+	channelData := [...]string{settingChannel, settingNSFWChannel}
 
 	for i, key := range channelData {
 		channel := b.Settings.GetString(ctx.GuildID, key)
@@ -853,7 +853,7 @@ func (b *Bot) runTroubleshoot(ctx *commandler.Context) (err error) {
 
 		mention := "<#" + id + ">"
 
-		for _, perm := range []int{
+		for _, perm := range [...]int{
 			discordgo.PermissionSendMessages,
 			discordgo.PermissionEmbedLinks,
 			discordgo.PermissionReadMessages,

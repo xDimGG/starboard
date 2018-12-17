@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"time"
 
@@ -24,9 +25,31 @@ func main() {
 			OwnerID:   os.Getenv("BOT_OWNER_ID"),
 			Mode:      os.Getenv("MODE"),
 			SentryDSN: os.Getenv("SENTRY_DSN"),
-			Lists: bot.Lists{
-				{os.Getenv("DBL_KEY"), "https://discordbots.org/api/bots/:id/stats"},
-				{os.Getenv("PW_BOTS_KEY"), "https://bots.discord.pw/api/bots/:id/stats"},
+			DiscordLists: []bot.DiscordList{
+				{
+					Authorization: os.Getenv("DBL_KEY"),
+					URL: func(id string) string {
+						return "https://discordbots.org/api/bots/" + id + "/stats"
+					},
+					Serialize: func(shardCount, guildCount int) ([]byte, error) {
+						return json.Marshal(map[string]int{
+							"shard_count":  shardCount,
+							"server_count": guildCount,
+						})
+					},
+				},
+				{
+					Authorization: os.Getenv("GG_BOTS_KEY"),
+					URL: func(id string) string {
+						return "https://discord.bots.gg/api/v1/bots/" + id + "/stats"
+					},
+					Serialize: func(shardCount, guildCount int) ([]byte, error) {
+						return json.Marshal(map[string]int{
+							"shardCount": shardCount,
+							"guildCount": guildCount,
+						})
+					},
+				},
 			},
 			Guild:            os.Getenv("BOT_GUILD"),
 			GuildLogChannel:  os.Getenv("BOT_GUILD_LOG_CHANNEL"),
