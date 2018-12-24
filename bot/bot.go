@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/xdimgg/starboard/bot/lockergroup"
+
 	"github.com/xdimgg/starboard/bot/util"
 
 	"github.com/bwmarrin/discordgo"
@@ -56,6 +58,7 @@ type Bot struct {
 	StartTime time.Time
 
 	expectedGuilds map[*discordgo.Session]int
+	lockerGroup    *lockergroup.LockerGroup
 	opts           *Options
 }
 
@@ -89,6 +92,7 @@ func New(opts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err error
 		StartTime: time.Now(),
 
 		expectedGuilds: make(map[*discordgo.Session]int),
+		lockerGroup:    lockergroup.New(),
 		opts:           opts,
 	}
 
@@ -136,6 +140,7 @@ func New(opts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err error
 			return nil, err
 		}
 
+		s.State.TrackEmojis = false
 		s.State.TrackPresences = false
 		s.State.TrackVoice = false
 

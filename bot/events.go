@@ -2,6 +2,7 @@ package bot
 
 import (
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/go-pg/pg"
@@ -21,7 +22,15 @@ func getIconURL(g *discordgo.Guild) string {
 }
 
 func (b *Bot) ready(s *discordgo.Session, r *discordgo.Ready) {
-	b.expectedGuilds[s] = len(r.Guilds)
+	expectedGuilds := 0
+
+	for _, g := range r.Guilds {
+		if !g.Unavailable {
+			expectedGuilds++
+		}
+	}
+
+	b.expectedGuilds[s] = expectedGuilds
 	s.UpdateStatus(0, "@"+r.User.Username+" help")
 }
 
@@ -121,6 +130,9 @@ func (b *Bot) messageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) (e
 		return
 	}
 
+	b.lockerGroup.Lock(m.ID)
+	defer b.lockerGroup.Unlock(m.ID)
+
 	key := "messages:" + m.ID
 
 	if b.Redis.Exists(key).Val() == 1 {
@@ -181,6 +193,9 @@ func (b *Bot) messageDelete(s *discordgo.Session, m *discordgo.MessageDelete) (e
 		return
 	}
 
+	b.lockerGroup.Lock(m.ID)
+	defer b.lockerGroup.Unlock(m.ID)
+
 	msg := &tables.Message{ID: m.ID}
 	err = b.PG.Select(msg)
 	if err != nil {
@@ -195,8 +210,19 @@ func (b *Bot) messageDelete(s *discordgo.Session, m *discordgo.MessageDelete) (e
 		return
 	}
 
-	go s.ChannelMessageDelete(starboard, msg.SentID)
-	go b.PG.Delete(msg)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		s.ChannelMessageDelete(starboard, msg.SentID)
+		wg.Done()
+	}()
+	go func() {
+		err = b.PG.Delete(msg)
+		wg.Done()
+	}()
+
+	wg.Wait()
 
 	return
 }
@@ -214,6 +240,8 @@ func (b *Bot) messageDeleteBulk(s *discordgo.Session, m *discordgo.MessageDelete
 
 	for i, id := range m.Messages {
 		args[i] = id
+		b.lockerGroup.Lock(id)
+		defer b.lockerGroup.Unlock(id)
 	}
 
 	var rows []tables.Message
@@ -241,8 +269,19 @@ func (b *Bot) messageDeleteBulk(s *discordgo.Session, m *discordgo.MessageDelete
 		messages[i] = row.SentID
 	}
 
-	go s.ChannelMessagesBulkDelete(starboard, messages)
-	go b.PG.Model((*tables.Message)(nil)).WhereIn("id IN (?)", args...).Delete()
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		s.ChannelMessagesBulkDelete(starboard, messages)
+		wg.Done()
+	}()
+	go func() {
+		_, err = b.PG.Model((*tables.Message)(nil)).WhereIn("id IN (?)", args...).Delete()
+		wg.Done()
+	}()
+
+	wg.Wait()
 
 	return
 }
@@ -261,6 +300,9 @@ func (b *Bot) messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReact
 	} else if m.Emoji.ID != emoji.ID {
 		return
 	}
+
+	b.lockerGroup.Lock(m.MessageID)
+	defer b.lockerGroup.Unlock(m.MessageID)
 
 	member, err := s.State.Member(m.GuildID, m.UserID)
 	perms, _ := s.State.UserChannelPermissions(s.State.User.ID, m.ChannelID)
@@ -325,6 +367,9 @@ func (b *Bot) messageReactionRemove(s *discordgo.Session, m *discordgo.MessageRe
 		return
 	}
 
+	b.lockerGroup.Lock(m.MessageID)
+	defer b.lockerGroup.Unlock(m.MessageID)
+
 	err = b.PG.Delete(&tables.Reaction{
 		UserID:    m.UserID,
 		MessageID: m.MessageID,
@@ -349,6 +394,9 @@ func (b *Bot) messageReactionRemoveAll(s *discordgo.Session, m *discordgo.Messag
 		return
 	}
 
+	b.lockerGroup.Lock(m.MessageID)
+	defer b.lockerGroup.Unlock(m.MessageID)
+
 	msg := &tables.Message{ID: m.MessageID}
 	err = b.PG.Select(msg)
 	if err != nil {
@@ -363,8 +411,19 @@ func (b *Bot) messageReactionRemoveAll(s *discordgo.Session, m *discordgo.Messag
 		return
 	}
 
-	go s.ChannelMessageDelete(starboard, msg.SentID)
-	go b.PG.Delete(msg)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		s.ChannelMessageDelete(starboard, msg.SentID)
+		wg.Done()
+	}()
+	go func() {
+		err = b.PG.Delete(msg)
+		wg.Done()
+	}()
+
+	wg.Wait()
 
 	return
 }
