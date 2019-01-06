@@ -22,15 +22,7 @@ func getIconURL(g *discordgo.Guild) string {
 }
 
 func (b *Bot) ready(s *discordgo.Session, r *discordgo.Ready) {
-	expectedGuilds := 0
-
-	for _, g := range r.Guilds {
-		if !g.Unavailable {
-			expectedGuilds++
-		}
-	}
-
-	b.expectedGuilds[s] = expectedGuilds
+	b.expectedGuilds[s] = len(r.Guilds)
 	s.UpdateStatus(0, "@"+r.User.Username+" help")
 }
 
