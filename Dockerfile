@@ -10,6 +10,6 @@ RUN apk add git curl --no-cache
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 RUN dep ensure
 RUN go build -o /bin/starboard
-RUN apk del golang*
+RUN apk del golang* curl
 
 ENTRYPOINT /bin/starboard
