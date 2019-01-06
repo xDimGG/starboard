@@ -1,2 +1,3 @@
-env
+env/*
+!env/prod.example.env
 vendor
