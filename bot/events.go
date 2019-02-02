@@ -122,8 +122,8 @@ func (b *Bot) messageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) (e
 		return
 	}
 
-	b.lockerGroup.Lock(m.ID)
-	defer b.lockerGroup.Unlock(m.ID)
+	b.mutexGroup.Lock(m.ID)
+	defer b.mutexGroup.Unlock(m.ID)
 
 	key := "messages:" + m.ID
 
@@ -185,8 +185,8 @@ func (b *Bot) messageDelete(s *discordgo.Session, m *discordgo.MessageDelete) (e
 		return
 	}
 
-	b.lockerGroup.Lock(m.ID)
-	defer b.lockerGroup.Unlock(m.ID)
+	b.mutexGroup.Lock(m.ID)
+	defer b.mutexGroup.Unlock(m.ID)
 
 	msg := &tables.Message{ID: m.ID}
 	err = b.PG.Select(msg)
@@ -232,8 +232,8 @@ func (b *Bot) messageDeleteBulk(s *discordgo.Session, m *discordgo.MessageDelete
 
 	for i, id := range m.Messages {
 		args[i] = id
-		b.lockerGroup.Lock(id)
-		defer b.lockerGroup.Unlock(id)
+		b.mutexGroup.Lock(id)
+		defer b.mutexGroup.Unlock(id)
 	}
 
 	var rows []tables.Message
@@ -293,8 +293,8 @@ func (b *Bot) messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReact
 		return
 	}
 
-	b.lockerGroup.Lock(m.MessageID)
-	defer b.lockerGroup.Unlock(m.MessageID)
+	b.mutexGroup.Lock(m.MessageID)
+	defer b.mutexGroup.Unlock(m.MessageID)
 
 	member, err := s.State.Member(m.GuildID, m.UserID)
 	perms, _ := s.State.UserChannelPermissions(s.State.User.ID, m.ChannelID)
@@ -359,8 +359,8 @@ func (b *Bot) messageReactionRemove(s *discordgo.Session, m *discordgo.MessageRe
 		return
 	}
 
-	b.lockerGroup.Lock(m.MessageID)
-	defer b.lockerGroup.Unlock(m.MessageID)
+	b.mutexGroup.Lock(m.MessageID)
+	defer b.mutexGroup.Unlock(m.MessageID)
 
 	err = b.PG.Delete(&tables.Reaction{
 		UserID:    m.UserID,
@@ -386,8 +386,8 @@ func (b *Bot) messageReactionRemoveAll(s *discordgo.Session, m *discordgo.Messag
 		return
 	}
 
-	b.lockerGroup.Lock(m.MessageID)
-	defer b.lockerGroup.Unlock(m.MessageID)
+	b.mutexGroup.Lock(m.MessageID)
+	defer b.mutexGroup.Unlock(m.MessageID)
 
 	msg := &tables.Message{ID: m.MessageID}
 	err = b.PG.Select(msg)

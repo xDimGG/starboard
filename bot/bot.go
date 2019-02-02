@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xdimgg/starboard/bot/lockergroup"
+	"github.com/GitbookIO/syncgroup"
 
 	"github.com/xdimgg/starboard/bot/util"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/getsentry/raven-go"
+	raven "github.com/getsentry/raven-go"
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
 	"github.com/go-redis/redis"
@@ -58,7 +58,7 @@ type Bot struct {
 	StartTime time.Time
 
 	expectedGuilds map[*discordgo.Session]int
-	lockerGroup    *lockergroup.LockerGroup
+	mutexGroup     *syncgroup.MutexGroup
 	opts           *Options
 }
 
@@ -92,7 +92,7 @@ func New(opts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err error
 		StartTime: time.Now(),
 
 		expectedGuilds: make(map[*discordgo.Session]int),
-		lockerGroup:    lockergroup.New(),
+		mutexGroup:     syncgroup.NewMutexGroup(),
 		opts:           opts,
 	}
 
