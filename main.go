@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/xdimgg/starboard/bot"
@@ -11,6 +12,14 @@ import (
 
 	"github.com/go-redis/redis"
 )
+
+func getenvInt(key string) int {
+	if n, err := strconv.Atoi(os.Getenv(key)); err == nil {
+		return n
+	}
+
+	return 0
+}
 
 func main() {
 	if os.Getenv("MODE") == "prod" {
@@ -60,10 +69,12 @@ func main() {
 			Database: os.Getenv("POSTGRES_DB"),
 			Password: os.Getenv("POSTGRES_PASSWORD"),
 			User:     os.Getenv("POSTGRES_USER"),
+			PoolSize: getenvInt("POSTGRES_POOL_SIZE"),
 		},
 		&redis.Options{
 			Addr:     os.Getenv("REDIS_ADDR"),
 			Password: os.Getenv("REDIS_PASSWORD"),
+			PoolSize: getenvInt("REDIS_POOL_SIZE"),
 		},
 	))
 }
