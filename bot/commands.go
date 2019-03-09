@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dustin/go-humanize"
+	humanize "github.com/dustin/go-humanize"
 
 	"github.com/go-pg/pg"
 
@@ -668,7 +668,11 @@ func (b *Bot) runFix(ctx *commandler.Context) (err error) {
 		ctx.Say("commands.fix.phrase.permissions")
 	}
 
-	err = b.updateMessage(ctx.Session, messageID, channelID, ctx.GuildID)
+	err = b.updateMessage(ctx.Session, &tables.Message{
+		ID:        messageID,
+		ChannelID: channelID,
+		GuildID:   ctx.GuildID,
+	})
 	if err != nil {
 		if rErr, ok := err.(*discordgo.RESTError); ok && rErr.Message != nil && rErr.Message.Code == discordgo.ErrCodeUnknownMessage {
 			ctx.Say("commands.fix.phrase.unknown_message")

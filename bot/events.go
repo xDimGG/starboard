@@ -168,7 +168,11 @@ func (b *Bot) messageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) (e
 		return
 	}
 
-	err = b.updateMessage(s, m.ID, m.ChannelID, m.GuildID)
+	err = b.updateMessage(s, &tables.Message{
+		ID:        m.ID,
+		ChannelID: m.ChannelID,
+		GuildID:   m.GuildID,
+	})
 	if err != nil {
 		return
 	}
@@ -341,7 +345,11 @@ func (b *Bot) messageReactionAdd(s *discordgo.Session, m *discordgo.MessageReact
 		return
 	}
 
-	return b.updateMessage(s, m.MessageID, m.ChannelID, m.GuildID)
+	return b.updateMessage(s, &tables.Message{
+		ID:        m.MessageID,
+		ChannelID: m.ChannelID,
+		GuildID:   m.GuildID,
+	})
 }
 
 func (b *Bot) messageReactionRemove(s *discordgo.Session, m *discordgo.MessageReactionRemove) (err error) {
@@ -370,7 +378,11 @@ func (b *Bot) messageReactionRemove(s *discordgo.Session, m *discordgo.MessageRe
 		return
 	}
 
-	err = b.updateMessage(s, m.MessageID, m.ChannelID, m.GuildID)
+	err = b.updateMessage(s, &tables.Message{
+		ID:        m.MessageID,
+		ChannelID: m.ChannelID,
+		GuildID:   m.GuildID,
+	})
 	if err != nil {
 		if e, ok := err.(pg.Error); ok && e.IntegrityViolation() {
 			return

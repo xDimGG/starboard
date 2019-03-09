@@ -238,20 +238,20 @@ func (b *Bot) cacheMessage(m *discordgo.Message) (err error) {
 	return b.Redis.Expire(key, expiryTime).Err()
 }
 
-func (b *Bot) createMessage(s *discordgo.Session, id, channel, guild string) (err error) {
-	msg, err := b.getMessage(s, id, channel)
+func (b *Bot) createMessage(s *discordgo.Session, m *tables.Message) (err error) {
+	m, err = b.getMessage(s, m.ID, m.ChannelID)
 	if err != nil {
 		return
 	}
 
 	c, _ := b.PG.
 		Model((*tables.Block)(nil)).
-		Where("guild_id = ?", msg.GuildID).
-		Where("type = 'user' AND id = ?", msg.AuthorID).
-		WhereOr("type = 'channel' AND id = ?", msg.ChannelID).
+		Where("guild_id = ?", m.GuildID).
+		Where("type = 'user' AND id = ?", m.AuthorID).
+		WhereOr("type = 'channel' AND id = ?", m.ChannelID).
 		Count()
 
-	switch b.Settings.GetString(msg.GuildID, settingBlockMode) {
+	switch b.Settings.GetString(m.GuildID, settingBlockMode) {
 	case "blacklist":
 		if c != 0 {
 			return
@@ -263,39 +263,39 @@ func (b *Bot) createMessage(s *discordgo.Session, id, channel, guild string) (er
 		}
 	}
 
-	starboard := b.getStarboard(s, msg.ChannelID, msg.GuildID)
+	starboard := b.getStarboard(s, m.ChannelID, m.GuildID)
 	if starboard == settingNone {
 		return
 	}
 
-	count, err := b.countStars(msg, false)
+	count, err := b.countStars(m, false)
 	if err != nil {
 		return
 	}
 
-	if count < b.Settings.GetInt(msg.GuildID, settingMinimum) {
+	if count < b.Settings.GetInt(m.GuildID, settingMinimum) {
 		return
 	}
 
-	sent, err := s.ChannelMessageSendEmbed(starboard, b.generateEmbed(msg, count))
+	sent, err := s.ChannelMessageSendEmbed(starboard, b.generateEmbed(m, count))
 	if err != nil {
 		return
 	}
 
-	msg.SentID = sent.ID
-	err = b.PG.Insert(msg)
+	m.SentID = sent.ID
+	err = b.PG.Insert(m)
 	return
 }
 
-func (b *Bot) countStars(msg *tables.Message, raw bool) (int, error) {
-	q := b.PG.Model((*tables.Reaction)(nil)).Where("message_id = ?", msg.ID)
+func (b *Bot) countStars(m *tables.Message, raw bool) (int, error) {
+	q := b.PG.Model((*tables.Reaction)(nil)).Where("message_id = ?", m.ID)
 
 	if !raw {
-		if !b.Settings.GetBool(msg.GuildID, settingSelfStar) {
-			q = q.Where("user_id != ?", msg.AuthorID)
+		if !b.Settings.GetBool(m.GuildID, settingSelfStar) {
+			q = q.Where("user_id != ?", m.AuthorID)
 		}
 
-		if b.Settings.GetBool(msg.GuildID, settingRemoveBotStars) {
+		if b.Settings.GetBool(m.GuildID, settingRemoveBotStars) {
 			q = q.Where("bot = FALSE")
 		}
 	}
@@ -303,35 +303,34 @@ func (b *Bot) countStars(msg *tables.Message, raw bool) (int, error) {
 	return q.Count()
 }
 
-func (b *Bot) updateMessage(s *discordgo.Session, id, channel, guild string) (err error) {
-	msg := &tables.Message{ID: id}
-	err = b.PG.Select(msg)
+func (b *Bot) updateMessage(s *discordgo.Session, m *tables.Message) (err error) {
+	err = b.PG.Select(m)
 	if err != nil {
 		if err == pg.ErrNoRows {
-			return b.createMessage(s, id, channel, guild)
+			return b.createMessage(s, m)
 		}
 
 		return
 	}
 
-	count, err := b.countStars(msg, false)
+	count, err := b.countStars(m, false)
 	if err != nil {
 		return
 	}
 
-	starboard := b.getStarboard(s, msg.ChannelID, msg.GuildID)
+	starboard := b.getStarboard(s, m.ChannelID, m.GuildID)
 	if starboard == settingNone {
 		return
 	}
 
-	if count < b.Settings.GetInt(msg.GuildID, settingMinimum) {
-		go s.ChannelMessageDelete(starboard, msg.SentID)
-		go b.PG.Delete(msg)
+	if count < b.Settings.GetInt(m.GuildID, settingMinimum) {
+		go s.ChannelMessageDelete(starboard, m.SentID)
+		go b.PG.Delete(m)
 		return
 	}
 
-	embed := b.generateEmbed(msg, count)
-	_, err = s.ChannelMessageEditEmbed(starboard, msg.SentID, embed)
+	embed := b.generateEmbed(m, count)
+	_, err = s.ChannelMessageEditEmbed(starboard, m.SentID, embed)
 	if err == nil {
 		return
 	}
@@ -346,7 +345,7 @@ func (b *Bot) updateMessage(s *discordgo.Session, id, channel, guild string) (er
 			return err
 		}
 
-		_, err = b.PG.Model(&tables.Message{ID: id}).WherePK().Set("sent_id = ?", sent.ID).Update()
+		_, err = b.PG.Model(&tables.Message{ID: m.ID, SentID: sent.ID}).UpdateNotNull()
 		return err
 	}
 
