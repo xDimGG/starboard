@@ -11,9 +11,13 @@ services:
   redis:
     image: redis:alpine
     env_file: env/prod.env
+    ports:
+      - 6379:6379
   postgres:
     image: postgres:alpine
     env_file: env/prod.env
+    ports:
+      - 5432:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
 

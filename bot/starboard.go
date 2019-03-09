@@ -345,7 +345,7 @@ func (b *Bot) updateMessage(s *discordgo.Session, m *tables.Message) (err error)
 			return err
 		}
 
-		_, err = b.PG.Model(&tables.Message{ID: m.ID, SentID: sent.ID}).UpdateNotNull()
+		_, err = b.PG.Model(&tables.Message{ID: m.ID, SentID: sent.ID}).WherePK().UpdateNotNull()
 		return err
 	}
 
