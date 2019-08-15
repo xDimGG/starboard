@@ -133,9 +133,9 @@ func New(opts *Options, pgOpts *pg.Options, redisOpts *redis.Options) (err error
 		return
 	}
 
-	b.Manager = dshardmanager.New(b.opts.Token)
+	b.Manager = dshardmanager.New("Bot " + b.opts.Token)
 	b.Manager.SessionFunc = dshardmanager.SessionFunc(func(token string) (s *discordgo.Session, err error) {
-		s, err = discordgo.New("Bot " + token)
+		s, err = discordgo.New(token)
 		if err != nil {
 			return nil, err
 		}
